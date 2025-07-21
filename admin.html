@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Admin Panel - Free Lacak</title>
+  <title>Admin Dashboard - Free Lacak</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
@@ -14,17 +14,26 @@
       transform: translateY(-2px);
       box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
     }
+    .details-content {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.3s ease-out;
+    }
+    .details-content.expanded {
+      max-height: 500px;
+      transition: max-height 0.5s ease-in;
+    }
   </style>
 </head>
 <body>
   <script>
     // Authentication check
-    if (!sessionStorage.getItem('loggedIn')) {
+    if (!sessionStorage.getItem('loggedIn') && localStorage.getItem('rememberMe') !== 'true') {
       window.location.href = 'index.html';
     }
   </script>
 
-  <div class="container mx-auto p-4 max-w-6xl">
+  <div class="container mx-auto p-4 max-w-7xl">
     <div class="flex justify-between items-center mb-6">
       <h1 class="text-2xl font-bold">Admin Dashboard</h1>
       <div>
@@ -43,8 +52,8 @@
         <div id="totalLinks" class="text-2xl font-bold">0</div>
       </div>
       <div class="stat-card bg-white rounded-lg shadow-md p-4">
-        <div class="text-gray-500">Total Clicks</div>
-        <div id="totalClicks" class="text-2xl font-bold">0</div>
+        <div class="text-gray-500">Total Visits</div>
+        <div id="totalVisits" class="text-2xl font-bold">0</div>
       </div>
       <div class="stat-card bg-white rounded-lg shadow-md p-4">
         <div class="text-gray-500">Unique IPs</div>
@@ -56,20 +65,31 @@
       </div>
     </div>
 
-    <div class="bg-white rounded-lg shadow-md overflow-hidden">
-      <table class="min-w-full divide-y divide-gray-200">
-        <thead class="bg-gray-50">
-          <tr>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Link Name</th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">URL</th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Clicks</th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-          </tr>
-        </thead>
-        <tbody id="trackingTableBody" class="bg-white divide-y divide-gray-200">
-          <!-- Data will be loaded here -->
-        </tbody>
-      </table>
+    <div class="bg-white rounded-lg shadow-md overflow-hidden mb-6">
+      <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-gray-200">
+          <thead class="bg-gray-50">
+            <tr>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Target</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">IP Address</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Location</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Referrer</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Time</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="trackingTableBody" class="bg-white divide-y divide-gray-200">
+            <!-- Data will be loaded here -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div id="mapContainer" class="hidden bg-white rounded-lg shadow-md p-4 mb-6">
+      <h2 class="text-xl font-semibold mb-4">Location Map</h2>
+      <div id="map" class="h-96 w-full bg-gray-100 rounded-lg"></div>
+      <div id="locationDetails" class="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4"></div>
     </div>
   </div>
 
@@ -88,6 +108,7 @@
           localStorage.removeItem('trackingLogs');
           updateStats();
           loadTrackingData();
+          document.getElementById('mapContainer').classList.add('hidden');
           alert('All data has been cleared!');
         }
       });
@@ -101,7 +122,7 @@
         const logs = JSON.parse(localStorage.getItem('trackingLogs') || '[]');
         
         document.getElementById('totalLinks').textContent = links.length;
-        document.getElementById('totalClicks').textContent = logs.length;
+        document.getElementById('totalVisits').textContent = logs.length;
         
         const uniqueIPs = [...new Set(logs.map(log => log.ip))].filter(ip => ip && ip !== 'Unknown');
         document.getElementById('uniqueIPs').textContent = uniqueIPs.length;
@@ -111,61 +132,123 @@
       }
 
       function loadTrackingData() {
-        const links = JSON.parse(localStorage.getItem('trackingLinks') || '[]');
         const logs = JSON.parse(localStorage.getItem('trackingLogs') || '[]');
         const tableBody = document.getElementById('trackingTableBody');
         
         tableBody.innerHTML = '';
         
-        if (links.length === 0) {
+        if (logs.length === 0) {
           tableBody.innerHTML = `
             <tr>
-              <td colspan="4" class="px-6 py-4 text-center text-gray-500">No tracking links found</td>
+              <td colspan="7" class="px-6 py-4 text-center text-gray-500">No tracking data found</td>
             </tr>
           `;
           return;
         }
         
-        links.forEach(link => {
-          const clickCount = logs.filter(log => log.id === link.id).length;
-          
+        // Sort by timestamp (newest first)
+        logs.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+        
+        logs.forEach(log => {
           const row = document.createElement('tr');
+          row.className = 'hover:bg-gray-50';
           row.innerHTML = `
-            <td class="px-6 py-4 whitespace-nowrap">${link.name}</td>
-            <td class="px-6 py-4">
-              <div class="text-sm text-gray-900 truncate max-w-xs">${link.url}</div>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${log.id.substring(0, 8)}...</td>
+            <td class="px-6 py-4 max-w-xs truncate text-sm text-gray-900">${log.target}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${log.ip || 'Unknown'}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+              ${log.city || 'Unknown'}, ${log.region || 'Unknown'}
             </td>
-            <td class="px-6 py-4 whitespace-nowrap">${clickCount}</td>
-            <td class="px-6 py-4 whitespace-nowrap">
-              <button class="view-btn px-3 py-1 bg-blue-500 text-white rounded mr-2" data-id="${link.id}">
-                <i class="fas fa-eye"></i>
-              </button>
-              <button class="delete-btn px-3 py-1 bg-red-500 text-white rounded" data-id="${link.id}">
-                <i class="fas fa-trash"></i>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+              ${log.referrer.length > 20 ? log.referrer.substring(0, 20) + '...' : log.referrer}
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+              ${new Date(log.timestamp).toLocaleString()}
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+              <button class="view-details-btn text-blue-600 hover:text-blue-900 mr-3" data-id="${log.id}">
+                View Details
               </button>
             </td>
           `;
           tableBody.appendChild(row);
         });
         
-        // Add event listeners
-        document.querySelectorAll('.delete-btn').forEach(btn => {
+        // Add event listeners for view details buttons
+        document.querySelectorAll('.view-details-btn').forEach(btn => {
           btn.addEventListener('click', function() {
-            const id = this.getAttribute('data-id');
-            if (confirm('Delete this tracking link and all its data?')) {
-              let links = JSON.parse(localStorage.getItem('trackingLinks') || []);
-              links = links.filter(link => link.id !== id);
-              localStorage.setItem('trackingLinks', JSON.stringify(links));
-              
-              let logs = JSON.parse(localStorage.getItem('trackingLogs') || []);
-              logs = logs.filter(log => log.id !== id);
-              localStorage.setItem('trackingLogs', JSON.stringify(logs));
-              
-              updateStats();
-              loadTrackingData();
-            }
+            const logId = this.getAttribute('data-id');
+            showLogDetails(logId);
           });
         });
+      }
+
+      function showLogDetails(logId) {
+        const logs = JSON.parse(localStorage.getItem('trackingLogs') || '[]');
+        const log = logs.find(l => l.id === logId);
+        
+        if (!log) return;
+        
+        // Load Leaflet.js for maps dynamically
+        const leafletCSS = document.createElement('link');
+        leafletCSS.rel = 'stylesheet';
+        leafletCSS.href = 'https://unpkg.com/leaflet@1.7.1/dist/leaflet.css';
+        document.head.appendChild(leafletCSS);
+        
+        const leafletJS = document.createElement('script');
+        leafletJS.src = 'https://unpkg.com/leaflet@1.7.1/dist/leaflet.js';
+        leafletJS.onload = function() {
+          displayMapWithLogDetails(log);
+        };
+        document.head.appendChild(leafletJS);
+      }
+
+      function displayMapWithLogDetails(log) {
+        const mapContainer = document.getElementById('mapContainer');
+        mapContainer.classList.remove('hidden');
+        
+        // Default coordinates (will be updated if available)
+        let lat = -6.2088; // Default to Jakarta
+        let lng = 106.8456;
+        
+        // Try to get coordinates from log (you'll need to implement this in your tracking)
+        if (log.latitude && log.longitude) {
+          lat = parseFloat(log.latitude);
+          lng = parseFloat(log.longitude);
+        }
+        
+        // Initialize map
+        const map = L.map('map').setView([lat, lng], 13);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(map);
+        
+        // Add marker
+        const marker = L.marker([lat, lng]).addTo(map)
+          .bindPopup(`<b>${log.city || 'Unknown location'}</b><br>${log.ip || 'IP unknown'}`);
+        
+        // Display detailed information
+        const locationDetails = document.getElementById('locationDetails');
+        locationDetails.innerHTML = `
+          <div class="bg-gray-50 p-4 rounded-lg">
+            <h3 class="font-medium text-gray-700">Device Information</h3>
+            <p class="text-sm mt-2"><span class="font-semibold">Platform:</span> ${log.platform || 'Unknown'}</p>
+            <p class="text-sm"><span class="font-semibold">Screen:</span> ${log.screenWidth || '?'}x${log.screenHeight || '?'}</p>
+            <p class="text-sm"><span class="font-semibold">Language:</span> ${log.language || 'Unknown'}</p>
+          </div>
+          <div class="bg-gray-50 p-4 rounded-lg">
+            <h3 class="font-medium text-gray-700">Network Information</h3>
+            <p class="text-sm mt-2"><span class="font-semibold">IP:</span> ${log.ip || 'Unknown'}</p>
+            <p class="text-sm"><span class="font-semibold">Location:</span> ${log.city || 'Unknown'}, ${log.region || 'Unknown'}, ${log.country || 'Unknown'}</p>
+            <p class="text-sm"><span class="font-semibold">Coordinates:</span> ${lat.toFixed(4)}, ${lng.toFixed(4)}</p>
+          </div>
+          <div class="bg-gray-50 p-4 rounded-lg">
+            <h3 class="font-medium text-gray-700">Tracking Information</h3>
+            <p class="text-sm mt-2"><span class="font-semibold">Time:</span> ${new Date(log.timestamp).toLocaleString()}</p>
+            <p class="text-sm"><span class="font-semibold">Referrer:</span> ${log.referrer || 'Direct'}</p>
+            <p class="text-sm"><span class="font-semibold">User Agent:</span> ${log.userAgent.substring(0, 50)}...</p>
+          </div>
+        `;
       }
     });
   </script>
