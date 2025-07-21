@@ -72,14 +72,12 @@
   </div>
 
   <script>
-    // Check if user is already logged in
-    if (localStorage.getItem('loggedIn') === 'true') {
-      window.location.href = 'lacak.html';
-    }
+    // REMOVED the auto-redirect completely
+    // Only login via form submission will grant access
 
-    // Hardcoded admin credentials (remove this in production)
+    // Admin credentials (change these!)
     const ADMIN_CREDENTIALS = {
-      email: 'admin@lacak.com',
+      email: 'admin@lacak.com', 
       password: 'admin123'
     };
 
@@ -99,17 +97,17 @@
       button.classList.remove('bg-blue-600', 'hover:bg-blue-700');
       button.classList.add('bg-blue-400');
       
-      // Simulate network delay
+      // Simulate auth delay
       setTimeout(() => {
-        // Check credentials
         if (email === ADMIN_CREDENTIALS.email && password === ADMIN_CREDENTIALS.password) {
           // Successful login
           localStorage.setItem('loggedIn', 'true');
+          localStorage.setItem('loginTime', new Date().getTime());
           window.location.href = 'lacak.html';
         } else {
           // Failed login
           button.classList.add('shake', 'bg-red-500');
-          buttonText.textContent = 'Login Failed!';
+          buttonText.textContent = 'Invalid credentials!';
           spinner.classList.add('hidden');
           
           setTimeout(() => {
@@ -123,13 +121,6 @@
         }
       }, 800);
     });
-
-    // Add this to lacak.html and admin.html (at the top of <script>):
-    /*
-    if (localStorage.getItem('loggedIn') !== 'true') {
-      window.location.href = 'index.html';
-    }
-    */
   </script>
 </body>
 </html>
