@@ -1,0 +1,255 @@
+:root {
+  /* Light Mode Colors */
+  --bg-color: #ffffff;
+  --text-color: #2d3748;
+  --primary-color: #3b82f6;
+  --secondary-color: #eff6ff;
+  --input-bg: #f8fafc;
+  --input-border: #e2e8f0;
+  --toggle-bg: #e2e8f0;
+  --toggle-knob: #ffffff;
+  --toggle-label: #64748b;
+  --divider-color: #e2e8f0;
+}
+
+[data-theme="dark"] {
+  /* Dark Mode Colors */
+  --bg-color: #0f172a;
+  --text-color: #f8fafc;
+  --primary-color: #60a5fa;
+  --secondary-color: #1e293b;
+  --input-bg: #1e293b;
+  --input-border: #334155;
+  --toggle-bg: #334155;
+  --toggle-knob: #0f172a;
+  --toggle-label: #94a3b8;
+  --divider-color: #334155;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+}
+
+body {
+  font-family: 'Inter', sans-serif;
+  background-color: var(--bg-color);
+  color: var(--text-color);
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 2rem;
+}
+
+.container {
+  width: 100%;
+  max-width: 400px;
+  padding: 2rem;
+  border-radius: 1rem;
+  background-color: var(--bg-color);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+}
+
+.mode-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  margin-bottom: 2rem;
+  gap: 0.5rem;
+}
+
+.toggle-switch {
+  position: relative;
+  display: inline-block;
+  width: 50px;
+  height: 24px;
+}
+
+.toggle-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.toggle-switch .toggle-knob {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: var(--toggle-bg);
+  border-radius: 24px;
+  transition: .4s;
+}
+
+.toggle-switch .toggle-knob:before {
+  position: absolute;
+  content: "";
+  height: 16px;
+  width: 16px;
+  left: 4px;
+  bottom: 4px;
+  background-color: var(--toggle-knob);
+  border-radius: 50%;
+  transition: .4s;
+}
+
+.toggle-switch input:checked + .toggle-knob {
+  background-color: var(--primary-color);
+}
+
+.toggle-switch input:checked + .toggle-knob:before {
+  transform: translateX(26px);
+}
+
+.toggle-label {
+  font-size: 0.875rem;
+  color: var(--toggle-label);
+}
+
+header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+header h1 {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--primary-color);
+  margin-bottom: 0.5rem;
+}
+
+.subtitle {
+  font-size: 0.875rem;
+  color: var(--toggle-label);
+}
+
+.login-form {
+  margin-bottom: 1.5rem;
+}
+
+.form-group {
+  margin-bottom: 1.25rem;
+}
+
+.form-group label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 500;
+  margin-bottom: 0.5rem;
+  color: var(--text-color);
+}
+
+.form-group input {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--input-border);
+  border-radius: 0.5rem;
+  background-color: var(--input-bg);
+  color: var(--text-color);
+  font-size: 0.875rem;
+}
+
+.form-group input:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+}
+
+.forgot-password {
+  display: block;
+  text-align: right;
+  font-size: 0.75rem;
+  color: var(--primary-color);
+  margin-top: 0.5rem;
+  text-decoration: none;
+}
+
+.login-button {
+  width: 100%;
+  padding: 0.75rem;
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+  border-radius: 0.5rem;
+  font-weight: 600;
+  cursor: pointer;
+  margin-top: 0.5rem;
+}
+
+.login-button:hover {
+  background-color: #2563eb;
+}
+
+.divider {
+  display: flex;
+  align-items: center;
+  margin: 1.5rem 0;
+  color: var(--toggle-label);
+  font-size: 0.75rem;
+}
+
+.divider::before,
+.divider::after {
+  content: "";
+  flex: 1;
+  border-bottom: 1px solid var(--divider-color);
+}
+
+.divider span {
+  padding: 0 1rem;
+}
+
+.social-button {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid var(--input-border);
+  border-radius: 0.5rem;
+  background-color: var(--input-bg);
+  color: var(--text-color);
+  font-weight: 500;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.social-button:hover {
+  background-color: var(--secondary-color);
+}
+
+.register-link {
+  text-align: center;
+  font-size: 0.875rem;
+  color: var(--toggle-label);
+  margin-top: 1.5rem;
+}
+
+.register-link a {
+  color: var(--primary-color);
+  text-decoration: none;
+  font-weight: 500;
+}
+
+/* Wiggle Animation */
+@keyframes wiggle {
+  0%, 100% {
+    transform: rotate(0deg);
+  }
+  25% {
+    transform: rotate(0.5deg);
+  }
+  75% {
+    transform: rotate(-0.5deg);
+  }
+}
+
+.animate {
+  animation: wiggle 8s ease-in-out infinite;
+  animation-delay: var(--delay, 0s);
+}

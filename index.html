@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login - Free Lacak</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="bg-gray-100 min-h-screen flex items-center justify-center p-4">
+  <div class="bg-white rounded-xl shadow-md w-full max-w-md overflow-hidden">
+    <div class="bg-blue-600 text-white p-6 text-center">
+      <h1 class="text-2xl font-bold"><i class="fas fa-sign-in-alt mr-2"></i>Login</h1>
+    </div>
+
+    <form id="loginForm" class="p-6 space-y-4">
+      <!-- Email -->
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+        <div class="relative">
+          <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-500">
+            <i class="fas fa-envelope"></i>
+          </div>
+          <input 
+            type="email" 
+            id="loginEmail"
+            required
+            class="pl-10 w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            placeholder="your@email.com"
+          >
+        </div>
+      </div>
+
+      <!-- Password -->
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Password</label>
+        <div class="relative">
+          <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-500">
+            <i class="fas fa-lock"></i>
+          </div>
+          <input 
+            type="password" 
+            id="loginPassword"
+            required
+            class="pl-10 w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            placeholder="••••••"
+          >
+        </div>
+      </div>
+
+      <button
+        type="submit"
+        class="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 px-4 rounded-lg transition duration-200"
+      >
+        Login
+      </button>
+
+      <p class="text-center text-sm text-gray-600 mt-4">
+        Don't have an account? 
+        <a href="register.html" class="text-blue-600 hover:text-blue-800 font-medium">Register here</a>
+      </p>
+    </form>
+  </div>
+
+  <script>
+    document.getElementById('loginForm').addEventListener('submit', async function(e) {
+      e.preventDefault();
+      
+      const email = document.getElementById('loginEmail').value.trim();
+      const password = document.getElementById('loginPassword').value.trim();
+      
+      try {
+        // Try to read from database.txt
+        const response = await fetch('database.txt');
+        const data = await response.text();
+        const users = data.split('\n');
+        
+        for (const user of users) {
+          if (!user) continue;
+          const [savedEmail, savedPassword] = user.split('|');
+          if (savedEmail === email && savedPassword === password) {
+            localStorage.setItem('loggedIn', 'true');
+            window.location.href = 'lacak.html';
+            return;
+          }
+        }
+        
+        // Check localStorage fallback
+        const fallbackData = localStorage.getItem('dbFallback') || '';
+        const fallbackUsers = fallbackData.split('\n');
+        
+        for (const user of fallbackUsers) {
+          if (!user) continue;
+          const [savedEmail, savedPassword] = user.split('|');
+          if (savedEmail === email && savedPassword === password) {
+            localStorage.setItem('loggedIn', 'true');
+            window.location.href = 'lacak.html';
+            return;
+          }
+        }
+        
+        alert('Invalid email or password!');
+      } catch (error) {
+        console.error('Using localStorage fallback');
+        const fallbackData = localStorage.getItem('dbFallback') || '';
+        const fallbackUsers = fallbackData.split('\n');
+        
+        for (const user of fallbackUsers) {
+          if (!user) continue;
+          const [savedEmail, savedPassword] = user.split('|');
+          if (savedEmail === email && savedPassword === password) {
+            localStorage.setItem('loggedIn', 'true');
+            window.location.href = 'lacak.html';
+            return;
+          }
+        }
+        
+        alert('Invalid email or password!');
+      }
+    });
+  </script>
+</body>
+</html>
