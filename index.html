@@ -68,19 +68,20 @@
           <i class="fas fa-spinner fa-spin"></i>
         </span>
       </button>
-
-      <p class="text-center text-sm text-gray-600 mt-4">
-        Don't have an account? 
-        <a href="register.html" class="text-blue-600 hover:text-blue-800 font-medium">Register here</a>
-      </p>
     </form>
   </div>
 
   <script>
-    // Redirect if already logged in
+    // Check if user is already logged in
     if (localStorage.getItem('loggedIn') === 'true') {
       window.location.href = 'lacak.html';
     }
+
+    // Hardcoded admin credentials (remove this in production)
+    const ADMIN_CREDENTIALS = {
+      email: 'admin@lacak.com',
+      password: 'admin123'
+    };
 
     document.getElementById('loginForm').addEventListener('submit', function(e) {
       e.preventDefault();
@@ -98,18 +99,12 @@
       button.classList.remove('bg-blue-600', 'hover:bg-blue-700');
       button.classList.add('bg-blue-400');
       
-      // Get users from localStorage
-      const users = JSON.parse(localStorage.getItem('users')) || [];
-      
       // Simulate network delay
       setTimeout(() => {
         // Check credentials
-        const user = users.find(u => u.email === email && u.password === password);
-        
-        if (user) {
+        if (email === ADMIN_CREDENTIALS.email && password === ADMIN_CREDENTIALS.password) {
           // Successful login
           localStorage.setItem('loggedIn', 'true');
-          localStorage.setItem('currentUser', JSON.stringify(user));
           window.location.href = 'lacak.html';
         } else {
           // Failed login
@@ -129,14 +124,12 @@
       }, 800);
     });
 
-    // Demo account for testing
-    if (!localStorage.getItem('users')) {
-      const demoUsers = [
-        { email: 'admin@example.com', password: 'admin123' },
-        { email: 'user@example.com', password: 'user123' }
-      ];
-      localStorage.setItem('users', JSON.stringify(demoUsers));
+    // Add this to lacak.html and admin.html (at the top of <script>):
+    /*
+    if (localStorage.getItem('loggedIn') !== 'true') {
+      window.location.href = 'index.html';
     }
+    */
   </script>
 </body>
 </html>
