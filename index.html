@@ -6,6 +6,16 @@
   <title>Login - Free Lacak</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    .shake {
+      animation: shake 0.5s;
+    }
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+      20%, 40%, 60%, 80% { transform: translateX(5px); }
+    }
+  </style>
 </head>
 <body class="bg-gray-100 min-h-screen flex items-center justify-center p-4">
   <div class="bg-white rounded-xl shadow-md w-full max-w-md overflow-hidden">
@@ -50,9 +60,13 @@
 
       <button
         type="submit"
+        id="loginButton"
         class="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 px-4 rounded-lg transition duration-200"
       >
-        Login
+        <span id="buttonText">Login</span>
+        <span id="spinner" class="hidden ml-2">
+          <i class="fas fa-spinner fa-spin"></i>
+        </span>
       </button>
 
       <p class="text-center text-sm text-gray-600 mt-4">
@@ -63,61 +77,66 @@
   </div>
 
   <script>
-    document.getElementById('loginForm').addEventListener('submit', async function(e) {
+    // Redirect if already logged in
+    if (localStorage.getItem('loggedIn') === 'true') {
+      window.location.href = 'lacak.html';
+    }
+
+    document.getElementById('loginForm').addEventListener('submit', function(e) {
       e.preventDefault();
       
       const email = document.getElementById('loginEmail').value.trim();
       const password = document.getElementById('loginPassword').value.trim();
+      const button = document.getElementById('loginButton');
+      const buttonText = document.getElementById('buttonText');
+      const spinner = document.getElementById('spinner');
       
-      try {
-        // Try to read from database.txt
-        const response = await fetch('database.txt');
-        const data = await response.text();
-        const users = data.split('\n');
+      // Show loading state
+      button.disabled = true;
+      buttonText.textContent = 'Authenticating...';
+      spinner.classList.remove('hidden');
+      button.classList.remove('bg-blue-600', 'hover:bg-blue-700');
+      button.classList.add('bg-blue-400');
+      
+      // Get users from localStorage
+      const users = JSON.parse(localStorage.getItem('users')) || [];
+      
+      // Simulate network delay
+      setTimeout(() => {
+        // Check credentials
+        const user = users.find(u => u.email === email && u.password === password);
         
-        for (const user of users) {
-          if (!user) continue;
-          const [savedEmail, savedPassword] = user.split('|');
-          if (savedEmail === email && savedPassword === password) {
-            localStorage.setItem('loggedIn', 'true');
-            window.location.href = 'lacak.html';
-            return;
-          }
+        if (user) {
+          // Successful login
+          localStorage.setItem('loggedIn', 'true');
+          localStorage.setItem('currentUser', JSON.stringify(user));
+          window.location.href = 'lacak.html';
+        } else {
+          // Failed login
+          button.classList.add('shake', 'bg-red-500');
+          buttonText.textContent = 'Login Failed!';
+          spinner.classList.add('hidden');
+          
+          setTimeout(() => {
+            button.classList.remove('shake', 'bg-red-500');
+            button.classList.add('bg-blue-600', 'hover:bg-blue-700');
+            buttonText.textContent = 'Login';
+            button.disabled = false;
+          }, 1500);
+          
+          document.getElementById('loginPassword').value = '';
         }
-        
-        // Check localStorage fallback
-        const fallbackData = localStorage.getItem('dbFallback') || '';
-        const fallbackUsers = fallbackData.split('\n');
-        
-        for (const user of fallbackUsers) {
-          if (!user) continue;
-          const [savedEmail, savedPassword] = user.split('|');
-          if (savedEmail === email && savedPassword === password) {
-            localStorage.setItem('loggedIn', 'true');
-            window.location.href = 'lacak.html';
-            return;
-          }
-        }
-        
-        alert('Invalid email or password!');
-      } catch (error) {
-        console.error('Using localStorage fallback');
-        const fallbackData = localStorage.getItem('dbFallback') || '';
-        const fallbackUsers = fallbackData.split('\n');
-        
-        for (const user of fallbackUsers) {
-          if (!user) continue;
-          const [savedEmail, savedPassword] = user.split('|');
-          if (savedEmail === email && savedPassword === password) {
-            localStorage.setItem('loggedIn', 'true');
-            window.location.href = 'lacak.html';
-            return;
-          }
-        }
-        
-        alert('Invalid email or password!');
-      }
+      }, 800);
     });
+
+    // Demo account for testing
+    if (!localStorage.getItem('users')) {
+      const demoUsers = [
+        { email: 'admin@example.com', password: 'admin123' },
+        { email: 'user@example.com', password: 'user123' }
+      ];
+      localStorage.setItem('users', JSON.stringify(demoUsers));
+    }
   </script>
 </body>
 </html>
