@@ -1,221 +1,149 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Free Lacak Tracking</title>
-    <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 20px;
-            background-color: #f5f5f5;
-        }
-        h1 {
-            color: #2c3e50;
-            text-align: center;
-            margin-bottom: 30px;
-        }
-        .input-container {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 20px;
-        }
-        #linkInput {
-            flex: 1;
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            font-size: 16px;
-        }
-        #addButton {
-            background-color: #3498db;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 16px;
-            transition: background-color 0.3s;
-        }
-        #addButton:hover {
-            background-color: #2980b9;
-        }
-        .link-list {
-            background-color: white;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-            overflow: hidden;
-        }
-        .link-item {
-            padding: 15px 20px;
-            border-bottom: 1px solid #eee;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .link-item:last-child {
-            border-bottom: none;
-        }
-        .link-name {
-            font-weight: 500;
-            color: #2c3e50;
-        }
-        .link-url {
-            color: #7f8c8d;
-            font-size: 14px;
-            margin-top: 5px;
-            word-break: break-all;
-        }
-        .link-actions {
-            display: flex;
-            gap: 10px;
-        }
-        .action-btn {
-            padding: 5px 10px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 14px;
-        }
-        .copy-btn {
-            background-color: #2ecc71;
-            color: white;
-        }
-        .copy-btn:hover {
-            background-color: #27ae60;
-        }
-        .delete-btn {
-            background-color: #e74c3c;
-            color: white;
-        }
-        .delete-btn:hover {
-            background-color: #c0392b;
-        }
-        .empty-state {
-            text-align: center;
-            padding: 30px;
-            color: #7f8c8d;
-        }
-        .nav {
-            display: flex;
-            justify-content: flex-end;
-            margin-bottom: 20px;
-        }
-        .nav-btn {
-            background-color: #2c3e50;
-            color: white;
-            padding: 8px 15px;
-            border-radius: 4px;
-            text-decoration: none;
-            font-size: 14px;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Free Lacak Tracking</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    .link-item:hover {
+      background-color: #f8fafc;
+    }
+  </style>
 </head>
 <body>
-    <div class="nav">
-        <a href="admin.html" class="nav-btn">Admin Panel</a>
-    </div>
-    
-    <h1>Free Lacak Tracking</h1>
-    
-    <div class="input-container">
-        <input type="text" id="linkInput" placeholder="Masukkan nama lokasi/link (contoh: Produk A)">
-        <button id="addButton">Add</button>
-    </div>
-    
-    <div class="link-list" id="linkList">
-        <!-- Link items will be added here dynamically -->
+  <script>
+    // Authentication check
+    if (!sessionStorage.getItem('loggedIn') {
+      window.location.href = 'index.html';
+    }
+  </script>
+
+  <div class="container mx-auto p-4 max-w-4xl">
+    <div class="flex justify-between items-center mb-6">
+      <h1 class="text-2xl font-bold">Free Lacak Tracking</h1>
+      <div>
+        <a href="admin.html" class="bg-blue-500 hover:bg-blue-700 text-white py-2 px-4 rounded mr-2">
+          Admin Panel
+        </a>
+        <button id="logoutBtn" class="bg-gray-500 hover:bg-gray-700 text-white py-2 px-4 rounded">
+          Logout
+        </button>
+      </div>
     </div>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const linkInput = document.getElementById('linkInput');
-            const addButton = document.getElementById('addButton');
-            const linkList = document.getElementById('linkList');
-            
-            loadLinks();
-            
-            addButton.addEventListener('click', addLink);
-            linkInput.addEventListener('keypress', function(e) {
-                if (e.key === 'Enter') {
-                    addLink();
-                }
-            });
-            
-            function addLink() {
-                const linkName = linkInput.value.trim();
-                if (!linkName) return;
-                
-                const trackingId = 'id-' + Date.now();
-                const trackingUrl = `${window.location.href.replace('lacak.html', '')}redirect.html?target=${encodeURIComponent(linkName)}&id=${trackingId}`;
-                
-                const links = JSON.parse(localStorage.getItem('trackingLinks') || '[]');
-                links.push({
-                    id: trackingId,
-                    name: linkName,
-                    url: trackingUrl,
-                    createdAt: new Date().toISOString()
-                });
-                localStorage.setItem('trackingLinks', JSON.stringify(links));
-                
-                loadLinks();
-                linkInput.value = '';
-            }
-            
-            function loadLinks() {
-                const links = JSON.parse(localStorage.getItem('trackingLinks') || '[]');
-                
-                if (links.length === 0) {
-                    linkList.innerHTML = '<div class="empty-state">Belum ada link tracking. Tambahkan link baru di atas.</div>';
-                    return;
-                }
-                
-                linkList.innerHTML = '';
-                links.forEach(link => {
-                    const linkItem = document.createElement('div');
-                    linkItem.className = 'link-item';
-                    linkItem.innerHTML = `
-                        <div>
-                            <div class="link-name">${link.name}</div>
-                            <div class="link-url">${link.url}</div>
-                        </div>
-                        <div class="link-actions">
-                            <button class="action-btn copy-btn" data-url="${link.url}">Copy</button>
-                            <button class="action-btn delete-btn" data-id="${link.id}">Delete</button>
-                        </div>
-                    `;
-                    linkList.appendChild(linkItem);
-                });
-                
-                document.querySelectorAll('.copy-btn').forEach(btn => {
-                    btn.addEventListener('click', function() {
-                        const url = this.getAttribute('data-url');
-                        navigator.clipboard.writeText(url).then(() => {
-                            alert('Link copied to clipboard!');
-                        });
-                    });
-                });
-                
-                document.querySelectorAll('.delete-btn').forEach(btn => {
-                    btn.addEventListener('click', function() {
-                        const id = this.getAttribute('data-id');
-                        deleteLink(id);
-                    });
-                });
-            }
-            
-            function deleteLink(id) {
-                if (!confirm('Are you sure you want to delete this tracking link?')) return;
-                
-                const links = JSON.parse(localStorage.getItem('trackingLinks') || '[]');
-                const updatedLinks = links.filter(link => link.id !== id);
-                localStorage.setItem('trackingLinks', JSON.stringify(updatedLinks));
-                
-                loadLinks();
-            }
+    <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+      <div class="flex mb-4">
+        <input 
+          type="text" 
+          id="linkInput" 
+          placeholder="Enter link name (e.g., Product A)"
+          class="flex-grow px-4 py-2 border border-gray-300 rounded-l-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+        >
+        <button 
+          id="addButton"
+          class="bg-blue-500 hover:bg-blue-700 text-white px-4 py-2 rounded-r-lg"
+        >
+          Add Link
+        </button>
+      </div>
+
+      <div id="linkList" class="border border-gray-200 rounded-lg overflow-hidden">
+        <!-- Links will be added here dynamically -->
+      </div>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      // Logout functionality
+      document.getElementById('logoutBtn').addEventListener('click', function() {
+        sessionStorage.removeItem('loggedIn');
+        window.location.href = 'index.html';
+      });
+
+      // Load existing links
+      loadLinks();
+
+      // Add new link
+      document.getElementById('addButton').addEventListener('click', addLink);
+      document.getElementById('linkInput').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') addLink();
+      });
+
+      function addLink() {
+        const linkName = document.getElementById('linkInput').value.trim();
+        if (!linkName) return;
+        
+        const trackingId = 'id-' + Date.now();
+        const trackingUrl = `${window.location.href.replace('lacak.html', '')}redirect.html?target=${encodeURIComponent(linkName)}&id=${trackingId}`;
+        
+        const links = JSON.parse(localStorage.getItem('trackingLinks') || [];
+        links.unshift({
+          id: trackingId,
+          name: linkName,
+          url: trackingUrl,
+          createdAt: new Date().toISOString()
         });
-    </script>
+        localStorage.setItem('trackingLinks', JSON.stringify(links));
+        
+        loadLinks();
+        document.getElementById('linkInput').value = '';
+      }
+
+      function loadLinks() {
+        const links = JSON.parse(localStorage.getItem('trackingLinks') || '[]');
+        const linkList = document.getElementById('linkList');
+        
+        if (links.length === 0) {
+          linkList.innerHTML = '<div class="p-4 text-center text-gray-500">No tracking links yet. Add your first link above.</div>';
+          return;
+        }
+        
+        linkList.innerHTML = '';
+        links.forEach(link => {
+          const linkItem = document.createElement('div');
+          linkItem.className = 'link-item border-b border-gray-200 p-4 flex justify-between items-center';
+          linkItem.innerHTML = `
+            <div class="flex-grow">
+              <div class="font-medium">${link.name}</div>
+              <div class="text-sm text-gray-500 truncate">${link.url}</div>
+            </div>
+            <div class="flex space-x-2">
+              <button class="copy-btn px-3 py-1 bg-green-500 text-white rounded" data-url="${link.url}">
+                <i class="fas fa-copy"></i>
+              </button>
+              <button class="delete-btn px-3 py-1 bg-red-500 text-white rounded" data-id="${link.id}">
+                <i class="fas fa-trash"></i>
+              </button>
+            </div>
+          `;
+          linkList.appendChild(linkItem);
+        });
+        
+        // Add event listeners
+        document.querySelectorAll('.copy-btn').forEach(btn => {
+          btn.addEventListener('click', function() {
+            const url = this.getAttribute('data-url');
+            navigator.clipboard.writeText(url);
+            alert('Link copied to clipboard!');
+          });
+        });
+        
+        document.querySelectorAll('.delete-btn').forEach(btn => {
+          btn.addEventListener('click', function() {
+            const id = this.getAttribute('data-id');
+            if (confirm('Are you sure you want to delete this tracking link?')) {
+              const links = JSON.parse(localStorage.getItem('trackingLinks') || [];
+              const updatedLinks = links.filter(link => link.id !== id);
+              localStorage.setItem('trackingLinks', JSON.stringify(updatedLinks));
+              loadLinks();
+            }
+          });
+        });
+      }
+    });
+  </script>
 </body>
 </html>
