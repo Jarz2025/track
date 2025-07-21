@@ -59,46 +59,52 @@
             const trackingId = urlParams.get('id');
             
             if (!targetName || !trackingId) {
-                window.location.href = 'index.html';
+                window.location.href = 'lacak.html';
                 return;
             }
             
-            // Simpan data pengunjung
+            // Data dasar yang bisa diambil tanpa API
             const trackingData = {
                 id: trackingId,
                 target: targetName,
                 timestamp: new Date().toISOString(),
-                referrer: document.referrer,
+                referrer: document.referrer || 'Direct',
                 userAgent: navigator.userAgent,
+                platform: navigator.platform,
                 screenWidth: window.screen.width,
                 screenHeight: window.screen.height,
-                language: navigator.language
+                language: navigator.language,
+                urlParams: window.location.search
             };
             
-            // Simpan ke localStorage untuk demo
-            const trackingLogs = JSON.parse(localStorage.getItem('trackingLogs') || '[]');
-            trackingLogs.push(trackingData);
-            localStorage.setItem('trackingLogs', JSON.stringify(trackingLogs));
+            // Coba dapatkan data IP
+            fetch('https://ipapi.co/json/')
+                .then(response => response.json())
+                .then(ipData => {
+                    trackingData.ip = ipData.ip;
+                    trackingData.country = ipData.country_name;
+                    trackingData.region = ipData.region;
+                    trackingData.city = ipData.city;
+                    
+                    // Simpan data lengkap
+                    saveTrackingData(trackingData);
+                })
+                .catch(error => {
+                    console.log('Gagal mendapatkan data IP, menyimpan data dasar saja');
+                    trackingData.ip = 'Unknown';
+                    saveTrackingData(trackingData);
+                });
             
-            // Coba dapatkan data IP (hanya akan bekerja di live server)
-            try {
-                fetch('https://ipapi.co/json/')
-                    .then(response => response.json())
-                    .then(ipData => {
-                        trackingData.ipData = ipData;
-                        localStorage.setItem('trackingLogs', JSON.stringify(trackingLogs));
-                    })
-                    .catch(e => console.log('IP tracking failed:', e));
-            } catch (e) {
-                console.log('IP tracking not available:', e);
+            function saveTrackingData(data) {
+                const trackingLogs = JSON.parse(localStorage.getItem('trackingLogs') || '[]');
+                trackingLogs.unshift(data); // Tambahkan di awal array
+                localStorage.setItem('trackingLogs', JSON.stringify(trackingLogs));
+                
+                // Redirect setelah 2 detik
+                setTimeout(() => {
+                    window.location.href = `https://google.com/search?q=${encodeURIComponent(targetName)}`;
+                }, 2000);
             }
-            
-            // Redirect setelah 2 detik
-            setTimeout(() => {
-                // Ganti URL berikut dengan tujuan akhir Anda
-                const targetUrl = `https://google.com/search?q=${encodeURIComponent(targetName)}`;
-                window.location.href = targetUrl;
-            }, 2000);
         });
     </script>
 </body>
