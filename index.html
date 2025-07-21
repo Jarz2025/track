@@ -6,16 +6,6 @@
   <title>Login - Free Lacak</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <style>
-    .shake {
-      animation: shake 0.5s;
-    }
-    @keyframes shake {
-      0%, 100% { transform: translateX(0); }
-      10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
-      20%, 40%, 60%, 80% { transform: translateX(5px); }
-    }
-  </style>
 </head>
 <body class="bg-gray-100 min-h-screen flex items-center justify-center p-4">
   <div class="bg-white rounded-xl shadow-md w-full max-w-md overflow-hidden">
@@ -36,8 +26,7 @@
             id="loginEmail"
             required
             class="pl-10 w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            placeholder="access@track.jarz2025"
-            value="access@track.jarz2025"
+            placeholder="your@email.com"
           >
         </div>
       </div>
@@ -54,95 +43,75 @@
             id="loginPassword"
             required
             class="pl-10 w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            placeholder="acc2025"
-            value="acc2025"
+            placeholder="••••••"
           >
         </div>
       </div>
 
-      <!-- Remember Me -->
-      <div class="flex items-center">
-        <input id="rememberMe" type="checkbox" class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
-        <label for="rememberMe" class="ml-2 block text-sm text-gray-700">Remember me</label>
-      </div>
-
       <button
         type="submit"
-        id="loginButton"
         class="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 px-4 rounded-lg transition duration-200"
       >
-        <span id="buttonText">Login</span>
-        <span id="spinner" class="hidden ml-2">
-          <i class="fas fa-spinner fa-spin"></i>
-        </span>
+        Login
       </button>
     </form>
   </div>
 
   <script>
-    // Hardcoded admin credentials
-    const ADMIN_CREDENTIALS = {
-      email: 'access@track.jarz2025', 
-      password: 'acc2025'
-    };
-
-    // Check if remembered login exists
-    if (localStorage.getItem('rememberMe') === 'true') {
-      document.getElementById('rememberMe').checked = true;
-      document.getElementById('loginEmail').value = ADMIN_CREDENTIALS.email;
-    }
-
-    document.getElementById('loginForm').addEventListener('submit', function(e) {
+    document.getElementById('loginForm').addEventListener('submit', async function(e) {
       e.preventDefault();
       
       const email = document.getElementById('loginEmail').value.trim();
       const password = document.getElementById('loginPassword').value.trim();
-      const rememberMe = document.getElementById('rememberMe').checked;
-      const button = document.getElementById('loginButton');
-      const buttonText = document.getElementById('buttonText');
-      const spinner = document.getElementById('spinner');
       
-      // Show loading state
-      button.disabled = true;
-      buttonText.textContent = 'Authenticating...';
-      spinner.classList.remove('hidden');
-      button.classList.remove('bg-blue-600', 'hover:bg-blue-700');
-      button.classList.add('bg-blue-400');
-      
-      // Simulate network delay
-      setTimeout(() => {
-        // Check credentials
-        if (email === ADMIN_CREDENTIALS.email && password === ADMIN_CREDENTIALS.password) {
-          // Set session
-          sessionStorage.setItem('loggedIn', 'true');
-          
-          // Remember me functionality
-          if (rememberMe) {
-            localStorage.setItem('rememberMe', 'true');
-            localStorage.setItem('savedEmail', email);
-          } else {
-            localStorage.removeItem('rememberMe');
-            localStorage.removeItem('savedEmail');
+      try {
+        // Try to read from database.txt
+        const response = await fetch('database.txt');
+        const data = await response.text();
+        const users = data.split('\n');
+        
+        for (const user of users) {
+          if (!user) continue;
+          const [savedEmail, savedPassword] = user.split('|');
+          if (savedEmail === email && savedPassword === password) {
+            localStorage.setItem('loggedIn', 'true');
+            window.location.href = 'lacak.html';
+            return;
           }
-          
-          // Redirect to tracking page
-          window.location.href = 'lacak.html';
-        } else {
-          // Failed login
-          button.classList.add('shake', 'bg-red-500');
-          buttonText.textContent = 'Invalid credentials!';
-          spinner.classList.add('hidden');
-          
-          setTimeout(() => {
-            button.classList.remove('shake', 'bg-red-500');
-            button.classList.add('bg-blue-600', 'hover:bg-blue-700');
-            buttonText.textContent = 'Login';
-            button.disabled = false;
-          }, 1500);
-          
-          document.getElementById('loginPassword').value = '';
         }
-      }, 800);
+        
+        // Check localStorage fallback
+        const fallbackData = localStorage.getItem('dbFallback') || '';
+        const fallbackUsers = fallbackData.split('\n');
+        
+        for (const user of fallbackUsers) {
+          if (!user) continue;
+          const [savedEmail, savedPassword] = user.split('|');
+          if (savedEmail === email && savedPassword === password) {
+            localStorage.setItem('loggedIn', 'true');
+            window.location.href = 'lacak.html';
+            return;
+          }
+        }
+        
+        alert('Invalid email or password!');
+      } catch (error) {
+        console.error('Using localStorage fallback');
+        const fallbackData = localStorage.getItem('dbFallback') || '';
+        const fallbackUsers = fallbackData.split('\n');
+        
+        for (const user of fallbackUsers) {
+          if (!user) continue;
+          const [savedEmail, savedPassword] = user.split('|');
+          if (savedEmail === email && savedPassword === password) {
+            localStorage.setItem('loggedIn', 'true');
+            window.location.href = 'lacak.html';
+            return;
+          }
+        }
+        
+        alert('Invalid email or password!');
+      }
     });
   </script>
 </body>
