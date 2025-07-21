@@ -98,9 +98,26 @@
             padding: 30px;
             color: #7f8c8d;
         }
+        .nav {
+            display: flex;
+            justify-content: flex-end;
+            margin-bottom: 20px;
+        }
+        .nav-btn {
+            background-color: #2c3e50;
+            color: white;
+            padding: 8px 15px;
+            border-radius: 4px;
+            text-decoration: none;
+            font-size: 14px;
+        }
     </style>
 </head>
 <body>
+    <div class="nav">
+        <a href="admin.html" class="nav-btn">Admin Panel</a>
+    </div>
+    
     <h1>Free Lacak Tracking</h1>
     
     <div class="input-container">
@@ -132,7 +149,7 @@
                 if (!linkName) return;
                 
                 const trackingId = 'id-' + Date.now();
-                const trackingUrl = `${window.location.href.replace('index.html', '')}redirect.html?target=${encodeURIComponent(linkName)}&id=${trackingId}`;
+                const trackingUrl = `${window.location.href.replace('lacak.html', '')}redirect.html?target=${encodeURIComponent(linkName)}&id=${trackingId}`;
                 
                 const links = JSON.parse(localStorage.getItem('trackingLinks') || '[]');
                 links.push({
