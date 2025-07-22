@@ -213,6 +213,7 @@
       font-size: 0.8rem;
       cursor: pointer;
       transition: var(--transition);
+      margin-right: 0.25rem;
     }
 
     .btn-view {
@@ -276,6 +277,7 @@
       max-width: 800px;
       max-height: 90vh;
       overflow-y: auto;
+      position: relative;
     }
 
     .modal-map {
@@ -286,9 +288,50 @@
     }
 
     .close-modal {
-      float: right;
+      position: absolute;
+      top: 1rem;
+      right: 1rem;
       font-size: 1.5rem;
       cursor: pointer;
+      color: var(--gray-color);
+      transition: var(--transition);
+    }
+
+    .close-modal:hover {
+      color: var(--danger-color);
+    }
+
+    .modal-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 1rem;
+      margin-top: 1.5rem;
+    }
+
+    .modal-item {
+      margin-bottom: 0.5rem;
+    }
+
+    .modal-label {
+      font-weight: 600;
+      color: var(--primary-color);
+      font-size: 0.85rem;
+      margin-bottom: 0.25rem;
+    }
+
+    .modal-value {
+      background-color: var(--light-gray);
+      padding: 0.5rem;
+      border-radius: 4px;
+      font-size: 0.9rem;
+      word-break: break-all;
+    }
+
+    .modal-title {
+      color: var(--primary-color);
+      margin-bottom: 1rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 1px solid var(--light-gray);
     }
 
     /* Dark mode */
@@ -315,6 +358,20 @@
     body.dark-mode .stat-card,
     body.dark-mode .table-container {
       box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+    }
+
+    body.dark-mode .modal-value {
+      background-color: #2d3748;
+      color: #e0e0e0;
+    }
+
+    body.dark-mode .modal-label {
+      color: #60a5fa;
+    }
+
+    body.dark-mode .modal-title {
+      color: #60a5fa;
+      border-bottom-color: #2d3748;
     }
 
     /* Theme toggle */
@@ -476,7 +533,7 @@
               <th>Location</th>
               <th>Referrer</th>
               <th>Timestamp</th>
-              <th>Device ID</th>
+              <th>Actions</th>
             </tr>
           </thead>
           <tbody id="trackingTableBody">
@@ -486,6 +543,17 @@
       </div>
 
       <div class="pagination" id="pagination"></div>
+    </div>
+
+    <!-- Details Modal -->
+    <div class="modal" id="detailsModal">
+      <div class="modal-content">
+        <span class="close-modal" id="closeModal">&times;</span>
+        <h2 class="modal-title">Tracking Details</h2>
+        <div class="modal-grid" id="modalContent">
+          <!-- Details will be inserted here -->
+        </div>
+      </div>
     </div>
 
     <!-- Theme toggle -->
@@ -581,6 +649,8 @@
             trackingData.city = ipData.city;
             trackingData.country = ipData.country_name;
             trackingData.region = ipData.region;
+            trackingData.latitude = ipData.latitude;
+            trackingData.longitude = ipData.longitude;
           }
         } catch (ipError) {
           console.error('Error fetching IP data:', ipError);
@@ -694,7 +764,7 @@
       const paginatedLogs = filteredLogs.slice(startIdx, endIdx);
       
       // Render table rows
-      paginatedLogs.forEach(log => {
+      paginatedLogs.forEach((log, index) => {
         const locationText = log.city && log.country ? 
           `${log.city}, ${log.country}` : 
           (log.country || log.ip || 'Unknown');
@@ -716,7 +786,14 @@
           <td>${locationText}</td>
           <td>${log.referrer.substring(0, 20)}${log.referrer.length > 20 ? '...' : ''}</td>
           <td>${formattedTime}</td>
-          <td>${log.deviceId.substring(0, 8)}...</td>
+          <td>
+            <button class="action-btn btn-view" data-index="${startIdx + index}">
+              <i class="fas fa-eye"></i> View
+            </button>
+            <button class="action-btn btn-delete" data-id="${log.id}">
+              <i class="fas fa-trash-alt"></i> Delete
+            </button>
+          </td>
         `;
         tbody.appendChild(row);
       });
@@ -746,6 +823,125 @@
         nextBtn.onclick = () => renderTable(currentPage + 1);
         pagination.appendChild(nextBtn);
       }
+
+      // Add event listeners to view buttons
+      document.querySelectorAll('.btn-view').forEach(btn => {
+        btn.addEventListener('click', function() {
+          const index = parseInt(this.getAttribute('data-index'));
+          showDetailsModal(index);
+        });
+      });
+    }
+
+    // Show details modal
+    function showDetailsModal(index) {
+      const modal = document.getElementById('detailsModal');
+      const modalContent = document.getElementById('modalContent');
+      const closeModal = document.getElementById('closeModal');
+      
+      const filteredLogs = viewMode === 'my' ? 
+        logsData.filter(log => log.deviceId === deviceId) : 
+        logsData;
+      
+      const log = filteredLogs[index];
+      
+      if (!log) return;
+      
+      // Format the timestamp nicely
+      const formattedTimestamp = new Date(log.timestamp).toLocaleString(undefined, {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit'
+      });
+      
+      // Helper function to display value or N/A
+      const displayValue = (value) => value || value === 0 ? value : 'N/A';
+      
+      // Create modal content
+      modalContent.innerHTML = `
+        <div class="modal-item">
+          <div class="modal-label">ID</div>
+          <div class="modal-value">${displayValue(log.id)}</div>
+        </div>
+        <div class="modal-item">
+          <div class="modal-label">Target</div>
+          <div class="modal-value">${displayValue(log.target)}</div>
+        </div>
+        <div class="modal-item">
+          <div class="modal-label">IP Address</div>
+          <div class="modal-value">${displayValue(log.ip)}</div>
+        </div>
+        <div class="modal-item">
+          <div class="modal-label">Country</div>
+          <div class="modal-value">${displayValue(log.country)}</div>
+        </div>
+        <div class="modal-item">
+          <div class="modal-label">City</div>
+          <div class="modal-value">${displayValue(log.city)}</div>
+        </div>
+        <div class="modal-item">
+          <div class="modal-label">Region</div>
+          <div class="modal-value">${displayValue(log.region)}</div>
+        </div>
+        <div class="modal-item">
+          <div class="modal-label">Latitude</div>
+          <div class="modal-value">${displayValue(log.latitude)}</div>
+        </div>
+        <div class="modal-item">
+          <div class="modal-label">Longitude</div>
+          <div class="modal-value">${displayValue(log.longitude)}</div>
+        </div>
+        <div class="modal-item">
+          <div class="modal-label">Referrer</div>
+          <div class="modal-value">${displayValue(log.referrer)}</div>
+        </div>
+        <div class="modal-item">
+          <div class="modal-label">Timestamp</div>
+          <div class="modal-value">${formattedTimestamp}</div>
+        </div>
+        <div class="modal-item">
+          <div class="modal-label">Device ID</div>
+          <div class="modal-value">${displayValue(log.deviceId)}</div>
+        </div>
+        <div class="modal-item">
+          <div class="modal-label">User Agent</div>
+          <div class="modal-value">${displayValue(log.userAgent)}</div>
+        </div>
+        <div class="modal-item">
+          <div class="modal-label">Platform</div>
+          <div class="modal-value">${displayValue(log.platform)}</div>
+        </div>
+        <div class="modal-item">
+          <div class="modal-label">Screen Width</div>
+          <div class="modal-value">${displayValue(log.screenWidth)}</div>
+        </div>
+        <div class="modal-item">
+          <div class="modal-label">Screen Height</div>
+          <div class="modal-value">${displayValue(log.screenHeight)}</div>
+        </div>
+        <div class="modal-item">
+          <div class="modal-label">Language</div>
+          <div class="modal-value">${displayValue(log.language)}</div>
+        </div>
+      `;
+      
+      // Show modal
+      modal.style.display = 'flex';
+      
+      // Close modal when clicking X
+      closeModal.onclick = () => {
+        modal.style.display = 'none';
+      };
+      
+      // Close modal when clicking outside
+      modal.onclick = (e) => {
+        if (e.target === modal) {
+          modal.style.display = 'none';
+        }
+      };
     }
 
     // Setup event listeners
