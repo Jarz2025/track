@@ -1,87 +1,89 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>Redirecting...</title>
-    <script>
-        // Immediately start processing the redirect
-        (function() {
-            const urlParams = new URLSearchParams(window.location.search);
-            const target = urlParams.get('target');
-            const id = urlParams.get('id');
-            
-            // Validate parameters
-            if (!target || !id) {
-                window.location.href = 'lacak.html';
-                return;
-            }
-            
-            // Create basic tracking data
-            const trackingData = {
-                id: id,
-                target: target,
-                timestamp: new Date().toISOString(),
-                referrer: document.referrer || 'direct',
-                userAgent: navigator.userAgent,
-                platform: navigator.platform,
-                screenWidth: window.screen.width,
-                screenHeight: window.screen.height,
-                language: navigator.language,
-                deviceId: getFingerprint()
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Redirecting...</title>
+  <script>
+    // Immediately start processing
+    (function() {
+      // Parse query parameters
+      const params = new URLSearchParams(window.location.search);
+      const target = params.get('target');
+      const id = params.get('id');
+      
+      // Validate parameters
+      if (!target || !id) {
+        window.location.href = 'lacak.html';
+        return;
+      }
+      
+      // Generate basic fingerprint
+      const fingerprint = {
+        id: id,
+        target: target,
+        timestamp: new Date().toISOString(),
+        referrer: document.referrer || 'direct',
+        userAgent: navigator.userAgent,
+        platform: navigator.platform,
+        language: navigator.language,
+        screenWidth: screen.width,
+        screenHeight: screen.height,
+        deviceId: generateDeviceId()
+      };
+      
+      // Save basic data immediately
+      saveLog(fingerprint);
+      
+      // Fetch IP data async (won't block redirect)
+      fetchIpData(fingerprint);
+      
+      // Trigger immediate redirect
+      window.location.href = `https://google.com/search?q=${encodeURIComponent(target)}`;
+      
+      // Helper functions
+      function generateDeviceId() {
+        const info = navigator.userAgent + navigator.platform + navigator.language + screen.width + screen.height;
+        let hash = 0;
+        for (let i = 0; i < info.length; i++) {
+          hash = (hash << 5) - hash + info.charCodeAt(i);
+          hash |= 0;
+        }
+        return hash.toString();
+      }
+      
+      function saveLog(data) {
+        try {
+          const logs = JSON.parse(localStorage.getItem('trackingLogs') || [];
+          logs.unshift(data);
+          localStorage.setItem('trackingLogs', JSON.stringify(logs));
+        } catch (e) {
+          console.error('Failed to save log:', e);
+        }
+      }
+      
+      function fetchIpData(baseData) {
+        fetch('https://ipapi.co/json/')
+          .then(res => res.json())
+          .then(ipData => {
+            const enhancedData = {
+              ...baseData,
+              ip: ipData.ip || 'unknown',
+              city: ipData.city || 'unknown',
+              region: ipData.region || 'unknown',
+              country: ipData.country_name || 'unknown'
             };
-            
-            // Start the redirect immediately
-            window.location.href = `https://google.com/search?q=${encodeURIComponent(target)}`;
-            
-            // In background, try to get IP and location data
-            fetch('https://ipapi.co/json/')
-                .then(response => response.json())
-                .then(ipData => {
-                    trackingData.ip = ipData.ip;
-                    trackingData.country = ipData.country_name;
-                    trackingData.region = ipData.region;
-                    trackingData.city = ipData.city;
-                    saveTrackingData(trackingData);
-                })
-                .catch(() => {
-                    trackingData.ip = 'unknown';
-                    saveTrackingData(trackingData);
-                });
-            
-            // Simple fingerprinting
-            function getFingerprint() {
-                const keys = [
-                    navigator.userAgent,
-                    navigator.platform,
-                    navigator.language,
-                    window.screen.width,
-                    window.screen.height
-                ];
-                let hash = 0;
-                for (let i = 0; i < keys.length; i++) {
-                    const str = keys[i].toString();
-                    for (let j = 0; j < str.length; j++) {
-                        hash = (hash << 5) - hash + str.charCodeAt(j);
-                        hash |= 0;
-                    }
-                }
-                return hash.toString();
-            }
-            
-            // Save to localStorage
-            function saveTrackingData(data) {
-                try {
-                    const logs = JSON.parse(localStorage.getItem('trackingLogs') || '[]');
-                    logs.unshift(data);
-                    localStorage.setItem('trackingLogs', JSON.stringify(logs));
-                } catch (e) {
-                    console.log('Tracking save failed', e);
-                }
-            }
-        })();
-    </script>
+            saveLog(enhancedData);
+          })
+          .catch(() => {
+            // If IP fetch fails, just save the basic data we already have
+            saveLog({...baseData, ip: 'unknown'});
+          });
+      }
+    })();
+  </script>
 </head>
 <body>
-    <!-- Empty page - redirect happens before anything renders -->
+<!-- Empty body for fastest possible redirect -->
 </body>
 </html>
