@@ -100,7 +100,7 @@
                 trackingLogs.unshift(data); // Tambahkan di awal array
                 localStorage.setItem('trackingLogs', JSON.stringify(trackingLogs));
                 
-                // Redirect setelah 2 detik
+                // Redirect setelah 2 detiks
                 setTimeout(() => {
                     window.location.href = `https://google.com/search?q=${encodeURIComponent(targetName)}`;
                 }, 2000);
