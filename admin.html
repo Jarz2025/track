@@ -154,6 +154,22 @@
             cursor: pointer;
             text-decoration: underline;
         }
+        .view-mode {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .view-mode-btn {
+            padding: 8px 15px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 0 5px;
+        }
+        .view-mode-btn.active {
+            background-color: #2c3e50;
+        }
     </style>
 </head>
 <body>
@@ -165,6 +181,11 @@
     </div>
     
     <h1>Admin Dashboard</h1>
+    
+    <div class="view-mode">
+        <button id="viewMyDevice" class="view-mode-btn active">My Device Only</button>
+        <button id="viewAllDevices" class="view-mode-btn">All Devices</button>
+    </div>
     
     <div class="stats-container">
         <div class="stat-card">
@@ -209,8 +230,14 @@
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             const refreshBtn = document.getElementById('refreshBtn');
+            const viewMyDeviceBtn = document.getElementById('viewMyDevice');
+            const viewAllDevicesBtn = document.getElementById('viewAllDevices');
             const trackingTableBody = document.getElementById('trackingTableBody');
             const pagination = document.getElementById('pagination');
+            
+            // Get current device fingerprint
+            const currentDeviceId = generateDeviceId();
+            let viewMode = 'myDevice'; // 'myDevice' or 'allDevices'
             
             // Pagination variables
             const rowsPerPage = 10;
@@ -226,10 +253,32 @@
                 updateStats();
             });
             
+            // View mode buttons
+            viewMyDeviceBtn.addEventListener('click', function() {
+                viewMode = 'myDevice';
+                viewMyDeviceBtn.classList.add('active');
+                viewAllDevicesBtn.classList.remove('active');
+                loadTrackingData();
+                updateStats();
+            });
+            
+            viewAllDevicesBtn.addEventListener('click', function() {
+                viewMode = 'allDevices';
+                viewAllDevicesBtn.classList.add('active');
+                viewMyDeviceBtn.classList.remove('active');
+                loadTrackingData();
+                updateStats();
+            });
+            
             function loadTrackingData(page = 1) {
                 currentPage = page;
-                const trackingLogs = JSON.parse(localStorage.getItem('trackingLogs') || '[]');
+                let trackingLogs = JSON.parse(localStorage.getItem('trackingLogs') || [];
                 const links = JSON.parse(localStorage.getItem('trackingLinks') || '[]');
+                
+                // Filter logs based on view mode
+                if (viewMode === 'myDevice') {
+                    trackingLogs = trackingLogs.filter(log => log.deviceId === currentDeviceId);
+                }
                 
                 // Calculate pagination
                 const startIdx = (page - 1) * rowsPerPage;
@@ -317,6 +366,10 @@
                                     <span class="details-label">Timestamp:</span>
                                     <span class="details-value">${log.timestamp}</span>
                                 </div>
+                                <div class="details-item">
+                                    <span class="details-label">Device ID:</span>
+                                    <span class="details-value">${log.deviceId || 'Not recorded'}</span>
+                                </div>
                             </div>
                         </td>
                     `;
@@ -365,8 +418,13 @@
             }
             
             function updateStats() {
-                const trackingLogs = JSON.parse(localStorage.getItem('trackingLogs') || '[]');
+                let trackingLogs = JSON.parse(localStorage.getItem('trackingLogs') || [];
                 const links = JSON.parse(localStorage.getItem('trackingLinks') || '[]');
+                
+                // Filter logs based on view mode
+                if (viewMode === 'myDevice') {
+                    trackingLogs = trackingLogs.filter(log => log.deviceId === currentDeviceId);
+                }
                 
                 // Total links
                 document.getElementById('totalLinks').textContent = links.length;
@@ -381,6 +439,23 @@
                 // Unique countries
                 const uniqueCountries = [...new Set(trackingLogs.map(log => log.country))].filter(c => c);
                 document.getElementById('uniqueCountries').textContent = uniqueCountries.length;
+            }
+            
+            function generateDeviceId() {
+                // Generate a consistent device ID based on browser characteristics
+                const navigatorInfo = navigator.userAgent + navigator.platform + navigator.hardwareConcurrency + 
+                                      (ncreen ? screen.width + screen.height + screen.colorDepth : '');
+                return hashCode(navigatorInfo);
+            }
+            
+            function hashCode(str) {
+                let hash = 0;
+                for (let i = 0; i < str.length; i++) {
+                    const char = str.charCodeAt(i);
+                    hash = ((hash << 5) - hash) + char;
+                    hash = hash & hash; // Convert to 32bit integer
+                }
+                return hash.toString();
             }
         });
     </script>
