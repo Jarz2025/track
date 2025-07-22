@@ -326,6 +326,22 @@
       .container {
         padding: 0 1rem;
       }
+
+      .nav {
+        flex-direction: column;
+        gap: 1rem;
+        padding: 1rem;
+      }
+
+      .nav > div {
+        display: flex;
+        gap: 0.5rem;
+      }
+
+      .tracking-table th,
+      .tracking-table td {
+        padding: 0.75rem 0.5rem;
+      }
     }
 
     @media (max-width: 480px) {
@@ -335,6 +351,15 @@
       
       .view-mode {
         flex-direction: column;
+      }
+
+      .tracking-table {
+        font-size: 0.8rem;
+      }
+
+      .action-btn {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.7rem;
       }
     }
   </style>
