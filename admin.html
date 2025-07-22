@@ -256,6 +256,7 @@
       overflow: hidden;
     }
 
+    /* Modal styles */
     .modal {
       display: none;
       position: fixed;
@@ -280,11 +281,37 @@
       position: relative;
     }
 
-    .modal-map {
-      height: 400px;
-      width: 100%;
-      margin-top: 1rem;
-      border-radius: var(--border-radius);
+    .modal-title {
+      color: var(--primary-color);
+      margin-bottom: 1.5rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 1px solid var(--light-gray);
+    }
+
+    .modal-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 1rem;
+      margin-top: 1.5rem;
+    }
+
+    .modal-item {
+      margin-bottom: 1rem;
+    }
+
+    .modal-label {
+      font-weight: 600;
+      color: var(--primary-color);
+      font-size: 0.85rem;
+      margin-bottom: 0.25rem;
+    }
+
+    .modal-value {
+      background-color: var(--light-gray);
+      padding: 0.75rem;
+      border-radius: 4px;
+      font-size: 0.9rem;
+      word-break: break-all;
     }
 
     .close-modal {
@@ -299,39 +326,6 @@
 
     .close-modal:hover {
       color: var(--danger-color);
-    }
-
-    .modal-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-      gap: 1rem;
-      margin-top: 1.5rem;
-    }
-
-    .modal-item {
-      margin-bottom: 0.5rem;
-    }
-
-    .modal-label {
-      font-weight: 600;
-      color: var(--primary-color);
-      font-size: 0.85rem;
-      margin-bottom: 0.25rem;
-    }
-
-    .modal-value {
-      background-color: var(--light-gray);
-      padding: 0.5rem;
-      border-radius: 4px;
-      font-size: 0.9rem;
-      word-break: break-all;
-    }
-
-    .modal-title {
-      color: var(--primary-color);
-      margin-bottom: 1rem;
-      padding-bottom: 0.5rem;
-      border-bottom: 1px solid var(--light-gray);
     }
 
     /* Dark mode */
