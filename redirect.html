@@ -1,127 +1,90 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Redirecting...</title>
-    <script>
-        // Immediately start processing the redirect
-        document.addEventListener('DOMContentLoaded', function() {
-            const urlParams = new URLSearchParams(window.location.search);
-            const target = urlParams.get('target');
-            const id = urlParams.get('id');
-            
-            if (!target || !id) {
-                console.error('Missing target or id parameter');
-                return;
-            }
-
-            // Create basic tracking data
-            const trackingData = {
-                id: id,
-                target: target,
-                timestamp: new Date().toISOString(),
-                referrer: document.referrer || 'Direct',
-                userAgent: navigator.userAgent,
-                platform: navigator.platform,
-                screenWidth: window.screen.width,
-                screenHeight: window.screen.height,
-                language: navigator.language,
-                deviceId: generateDeviceId()
-            };
-
-            // Save initial data immediately
-            saveTrackingData(trackingData);
-
-            // Start IP location fetch in background (won't block redirect)
-            fetchIpData(trackingData);
-
-            // Perform redirect as quickly as possible
-            try {
-                window.location.href = ensureHttp(target);
-            } catch (e) {
-                console.error('Redirect failed:', e);
-                window.location.href = 'https://google.com';
-            }
-        });
-
-        // Helper function to generate device fingerprint
-        function generateDeviceId() {
-            const info = navigator.userAgent + navigator.platform + navigator.language + 
-                        window.screen.width + window.screen.height;
-            let hash = 0;
-            for (let i = 0; i < info.length; i++) {
-                hash = (hash << 5) - hash + info.charCodeAt(i);
-                hash |= 0;
-            }
-            return hash.toString();
-        }
-
-        // Ensure URL has http/https protocol
-        function ensureHttp(url) {
-            if (!/^https?:\/\//i.test(url)) {
-                return 'http://' + url;
-            }
-            return url;
-        }
-
-        // Save tracking data to localStorage
-        function saveTrackingData(data) {
-            try {
-                const logs = JSON.parse(localStorage.getItem('trackingLogs') || '[]');
-                
-                // Remove existing entry with same ID if exists
-                const existingIndex = logs.findIndex(log => log.id === data.id);
-                if (existingIndex !== -1) {
-                    logs.splice(existingIndex, 1);
-                }
-                
-                // Add new data
-                logs.push(data);
-                localStorage.setItem('trackingLogs', JSON.stringify(logs));
-            } catch (e) {
-                console.error('Failed to save tracking data:', e);
-            }
-        }
-
-        // Fetch IP and location data (runs in background)
-        function fetchIpData(trackingData) {
-            fetch('https://ipapi.co/json/')
-                .then(response => {
-                    if (!response.ok) throw new Error('Network response was not ok');
-                    return response.json();
-                })
-                .then(ipData => {
-                    // Update tracking data with IP info
-                    const updatedData = {
-                        ...trackingData,
-                        ip: ipData.ip || 'Unknown',
-                        country: ipData.country_name || 'Unknown',
-                        region: ipData.region || 'Unknown',
-                        city: ipData.city || 'Unknown',
-                        latitude: ipData.latitude,
-                        longitude: ipData.longitude
-                    };
-                    
-                    // Save updated data
-                    saveTrackingData(updatedData);
-                })
-                .catch(error => {
-                    console.error('Error fetching IP data:', error);
-                    // Save basic data without IP info if fetch fails
-                    const fallbackData = {
-                        ...trackingData,
-                        ip: 'Unknown',
-                        country: 'Unknown',
-                        region: 'Unknown',
-                        city: 'Unknown'
-                    };
-                    saveTrackingData(fallbackData);
-                });
-        }
-    </script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Redirecting...</title>
+  <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-database-compat.js"></script>
 </head>
 <body>
-    <!-- Empty page for instant redirect -->
+  <script type="module">
+    // Initialize Firebase
+    const firebaseConfig = {
+      apiKey: "AIzaSyBclCbI9SudcBc6BR17Un8SNWTdzpGl29g",
+      authDomain: "jarsi-df353.firebaseapp.com",
+      databaseURL: "https://jarsi-df353-default-rtdb.firebaseio.com",
+      projectId: "jarsi-df353",
+      storageBucket: "jarsi-df353.appspot.com",
+      messagingSenderId: "488797085147",
+      appId: "1:488797085147:web:52108c710556a39f62dbfe"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const database = firebase.database();
+
+    // Get URL parameters
+    const urlParams = new URLSearchParams(window.location.search);
+    const target = urlParams.get('target');
+    const id = urlParams.get('id');
+
+    // Redirect if missing params
+    if (!target || !id) {
+      window.location.href = 'lacak.html';
+    } else {
+      // Create basic log data
+      const log = {
+        id,
+        target,
+        timestamp: new Date().toISOString(),
+        referrer: document.referrer || 'Direct',
+        userAgent: navigator.userAgent,
+        platform: navigator.platform,
+        screenWidth: window.screen.width,
+        screenHeight: window.screen.height,
+        language: navigator.language,
+        deviceId: generateDeviceId()
+      };
+
+      // Get IP and location data
+      fetch('https://ipapi.co/json/')
+        .then(response => response.json())
+        .then(ipData => {
+          // Add IP data to log
+          log.ip = ipData.ip || 'Unknown';
+          log.city = ipData.city || 'Unknown';
+          log.region = ipData.region || 'Unknown';
+          log.country = ipData.country_name || 'Unknown';
+          
+          // Save to Firebase
+          return database.ref('logs').push(log);
+        })
+        .catch(error => {
+          console.error('Error getting IP data:', error);
+          // Save without IP data
+          log.ip = 'Unknown';
+          log.city = 'Unknown';
+          log.region = 'Unknown';
+          log.country = 'Unknown';
+          return database.ref('logs').push(log);
+        })
+        .finally(() => {
+          // Redirect to target URL
+          window.location.href = decodeURIComponent(target);
+        });
+    }
+
+    // Simple device ID generator
+    function generateDeviceId() {
+      const info = navigator.userAgent + navigator.platform + navigator.language + 
+                   window.screen.width + window.screen.height;
+      let hash = 0;
+      for (let i = 0; i < info.length; i++) {
+        hash = (hash << 5) - hash + info.charCodeAt(i);
+        hash |= 0;
+      }
+      return hash.toString();
+    }
+  </script>
 </body>
 </html>
