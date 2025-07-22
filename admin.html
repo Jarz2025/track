@@ -3,18 +3,17 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Ultimate Admin Dashboard</title>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <title>Tracking Data Dashboard</title>
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <!-- Font Awesome for icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
-    /* === GLOBAL STYLES === */
     :root {
       --primary-color: #4361ee;
       --primary-dark: #3a56d4;
       --secondary-color: #3f37c9;
-      --accent-color: #4895ef;
       --danger-color: #f72585;
-      --success-color: #4cc9f0;
-      --warning-color: #f8961e;
       --light-color: #f8f9fa;
       --dark-color: #212529;
       --gray-color: #6c757d;
@@ -40,7 +39,7 @@
       margin: 0;
     }
 
-    /* === NAVIGATION === */
+    /* Navigation */
     .nav {
       display: flex;
       justify-content: space-between;
@@ -73,11 +72,7 @@
       transform: translateY(-2px);
     }
 
-    .nav-btn i {
-      font-size: 0.9rem;
-    }
-
-    /* === MAIN CONTENT === */
+    /* Main container */
     .container {
       max-width: 1200px;
       margin: 2rem auto;
@@ -91,7 +86,7 @@
       text-align: center;
     }
 
-    /* === VIEW MODE TOGGLE === */
+    /* View mode toggle */
     .view-mode {
       display: flex;
       justify-content: center;
@@ -113,20 +108,12 @@
       transition: var(--transition);
     }
 
-    .view-mode-btn i {
-      font-size: 1rem;
-    }
-
     .view-mode-btn.active {
       background-color: var(--primary-color);
       color: var(--white);
     }
 
-    .view-mode-btn:hover:not(.active) {
-      background-color: var(--light-gray);
-    }
-
-    /* === STATS CARDS === */
+    /* Stats cards */
     .stats-container {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -160,7 +147,7 @@
       color: var(--primary-color);
     }
 
-    /* === TRACKING TABLE === */
+    /* Table styles */
     .table-container {
       background-color: var(--white);
       border-radius: var(--border-radius);
@@ -195,10 +182,7 @@
       background-color: rgba(67, 97, 238, 0.05);
     }
 
-    .tracking-table tr:last-child td {
-      border-bottom: none;
-    }
-
+    /* Action buttons */
     .action-btn {
       padding: 0.35rem 0.75rem;
       border: none;
@@ -208,17 +192,9 @@
       transition: var(--transition);
     }
 
-    .action-btn i {
-      margin-right: 0.25rem;
-    }
-
     .btn-view {
-      background-color: var(--accent-color);
+      background-color: var(--secondary-color);
       color: var(--white);
-    }
-
-    .btn-view:hover {
-      background-color: #3a7bc8;
     }
 
     .btn-delete {
@@ -226,11 +202,7 @@
       color: var(--white);
     }
 
-    .btn-delete:hover {
-      background-color: #e5177e;
-    }
-
-    /* === PAGINATION === */
+    /* Pagination */
     .pagination {
       display: flex;
       justify-content: center;
@@ -253,147 +225,53 @@
       color: var(--white);
     }
 
-    .page-btn:hover:not(.active) {
-      background-color: rgba(67, 97, 238, 0.1);
+    /* Map container */
+    .map-container {
+      height: 200px;
+      width: 100%;
+      margin-top: 10px;
+      border-radius: var(--border-radius);
+      overflow: hidden;
     }
 
-    .page-btn.disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
+    /* Modal */
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.5);
+      z-index: 1000;
+      justify-content: center;
+      align-items: center;
     }
 
-    /* === NO DATA MESSAGE === */
-    .no-data {
-      text-align: center;
+    .modal-content {
+      background-color: var(--white);
       padding: 2rem;
-      color: var(--gray-color);
-      font-style: italic;
+      border-radius: var(--border-radius);
+      width: 90%;
+      max-width: 800px;
+      max-height: 90vh;
+      overflow-y: auto;
     }
 
-    /* === LOADING SPINNER === */
-    .spinner {
-      display: inline-block;
-      width: 1rem;
-      height: 1rem;
-      border: 2px solid rgba(255, 255, 255, 0.3);
-      border-radius: 50%;
-      border-top-color: var(--white);
-      animation: spin 1s ease-in-out infinite;
-      margin-left: 0.5rem;
-    }
-
-    @keyframes spin {
-      to {
-        transform: rotate(360deg);
-      }
-    }
-
-    /* === RESPONSIVE ADJUSTMENTS === */
-    @media (max-width: 768px) {
-      .stats-container {
-        grid-template-columns: repeat(2, 1fr));
-      }
-
-      .nav {
-        flex-direction: column;
-        gap: 1rem;
-        padding: 1rem;
-      }
-
-      .container {
-        padding: 0 1rem;
-      }
-    }
-
-    @media (max-width: 480px) {
-      .stats-container {
-        grid-template-columns: 1fr;
-      }
-
-      .view-mode {
-        flex-direction: column;
-      }
-    }
-
-    /* === ANIMATIONS === */
-    @keyframes fadeIn {
-      from {
-        opacity: 0;
-        transform: translateY(10px);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    }
-
-    .fade-in {
-      animation: fadeIn 0.5s ease-out forwards;
-    }
-
-    /* === TOOLTIPS === */
-    .tooltip {
-      position: relative;
-      display: inline-block;
-    }
-
-    .tooltip .tooltiptext {
-      visibility: hidden;
-      width: 120px;
-      background-color: var(--dark-color);
-      color: var(--white);
-      text-align: center;
-      border-radius: 6px;
-      padding: 5px;
-      position: absolute;
-      z-index: 1;
-      bottom: 125%;
-      left: 50%;
-      transform: translateX(-50%);
-      opacity: 0;
-      transition: opacity 0.3s;
-      font-size: 0.75rem;
-    }
-
-    .tooltip:hover .tooltiptext {
-      visibility: visible;
-      opacity: 1;
-    }
-
-    /* === UTILITY CLASSES === */
-    .text-center {
-      text-align: center;
-    }
-
-    .text-muted {
-      color: var(--gray-color);
-    }
-
-    .mt-1 {
-      margin-top: 0.5rem;
-    }
-
-    .mt-2 {
+    .modal-map {
+      height: 400px;
+      width: 100%;
       margin-top: 1rem;
+      border-radius: var(--border-radius);
     }
 
-    .mt-3 {
-      margin-top: 1.5rem;
+    .close-modal {
+      float: right;
+      font-size: 1.5rem;
+      cursor: pointer;
     }
 
-    .mb-1 {
-      margin-bottom: 0.5rem;
-    }
-
-    .mb-2 {
-      margin-bottom: 1rem;
-    }
-
-    .mb-3 {
-      margin-bottom: 1.5rem;
-    }
-
-    /* === DARK MODE === */
+    /* Dark mode */
     body.dark-mode {
       background-color: #121212;
       color: #e0e0e0;
@@ -401,7 +279,8 @@
 
     body.dark-mode .nav,
     body.dark-mode .stat-card,
-    body.dark-mode .table-container {
+    body.dark-mode .table-container,
+    body.dark-mode .modal-content {
       background-color: #1e1e1e;
     }
 
@@ -418,21 +297,7 @@
       box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
     }
 
-    body.dark-mode .stat-value {
-      color: #63b3ed;
-    }
-
-    body.dark-mode .view-mode-btn {
-      background-color: #2d3748;
-      color: #a0aec0;
-    }
-
-    body.dark-mode .view-mode-btn.active {
-      background-color: #4299e1;
-      color: white;
-    }
-
-    /* === THEME TOGGLE === */
+    /* Theme toggle */
     .theme-toggle {
       position: fixed;
       bottom: 2rem;
@@ -452,8 +317,25 @@
       font-size: 1.25rem;
     }
 
-    .theme-toggle:hover {
-      background-color: var(--primary-dark);
+    /* Responsive */
+    @media (max-width: 768px) {
+      .stats-container {
+        grid-template-columns: repeat(2, 1fr);
+      }
+      
+      .container {
+        padding: 0 1rem;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .stats-container {
+        grid-template-columns: 1fr;
+      }
+      
+      .view-mode {
+        flex-direction: column;
+      }
     }
   </style>
 </head>
@@ -463,6 +345,9 @@
       <i class="fas fa-arrow-left"></i> Back to Tracking
     </a>
     <div>
+      <button id="enableGeoBtn" class="nav-btn">
+        <i class="fas fa-map-marker-alt"></i> Enable Geolocation
+      </button>
       <button id="refreshBtn" class="nav-btn">
         <i class="fas fa-sync-alt"></i> Refresh Data
       </button>
@@ -470,7 +355,7 @@
   </div>
 
   <div class="container">
-    <h1>Admin Dashboard</h1>
+    <h1>Tracking Data Dashboard</h1>
 
     <div class="view-mode">
       <button id="viewMyDevice" class="view-mode-btn active">
@@ -482,21 +367,21 @@
     </div>
 
     <div class="stats-container">
-      <div class="stat-card fade-in">
-        <div class="stat-label">Total Links</div>
-        <div class="stat-value" id="totalLinks">0</div>
+      <div class="stat-card">
+        <div class="stat-label">Total Logs</div>
+        <div class="stat-value" id="totalLogs">0</div>
       </div>
-      <div class="stat-card fade-in">
-        <div class="stat-label">Total Visits</div>
-        <div class="stat-value" id="totalVisits">0</div>
-      </div>
-      <div class="stat-card fade-in">
-        <div class="stat-label">Unique Visitors</div>
+      <div class="stat-card">
+        <div class="stat-label">Unique IPs</div>
         <div class="stat-value" id="uniqueIPs">0</div>
       </div>
-      <div class="stat-card fade-in">
+      <div class="stat-card">
         <div class="stat-label">Countries</div>
         <div class="stat-value" id="uniqueCountries">0</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">With Geolocation</div>
+        <div class="stat-value" id="withGeo">0</div>
       </div>
     </div>
 
@@ -508,13 +393,14 @@
             <th>Link Name</th>
             <th>IP Address</th>
             <th>Location</th>
+            <th>Coordinates</th>
+            <th>Timestamp</th>
             <th>Referrer</th>
-            <th>Time</th>
             <th>Actions</th>
           </tr>
         </thead>
         <tbody id="trackingTableBody">
-          <!-- Data rows will be injected here -->
+          <!-- Data will be inserted here -->
         </tbody>
       </table>
     </div>
@@ -522,12 +408,26 @@
     <div class="pagination" id="pagination"></div>
   </div>
 
+  <!-- Modal for map view -->
+  <div class="modal" id="mapModal">
+    <div class="modal-content">
+      <span class="close-modal">&times;</span>
+      <h3 id="modalTitle">Location Details</h3>
+      <div id="modalMap" class="modal-map"></div>
+      <div id="modalDetails"></div>
+    </div>
+  </div>
+
+  <!-- Theme toggle -->
   <button class="theme-toggle" id="themeToggle">
     <i class="fas fa-moon"></i>
   </button>
 
+  <!-- Leaflet JS -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
   <script>
-    // === DEVICE IDENTIFIER ===
+    // Device identifier
     function getDeviceId() {
       const info = navigator.userAgent + navigator.platform + navigator.language;
       let hash = 0;
@@ -542,56 +442,43 @@
     let currentPage = 1;
     const rowsPerPage = 10;
     let viewMode = 'my'; // 'my' or 'all'
+    let map; // Will hold Leaflet map instance
 
-    // === DARK MODE TOGGLE ===
-    const themeToggle = document.getElementById('themeToggle');
-    themeToggle.addEventListener('click', () => {
-      document.body.classList.toggle('dark-mode');
-      const isDarkMode = document.body.classList.contains('dark-mode');
-      localStorage.setItem('darkMode', isDarkMode);
-      
-      if (isDarkMode) {
-        themeToggle.innerHTML = '<i class="fas fa-sun"></i>';
-      } else {
-        themeToggle.innerHTML = '<i class="fas fa-moon"></i>';
-      }
-    });
-
-    // Check for saved dark mode preference
-    if (localStorage.getItem('darkMode') === 'true') {
-      document.body.classList.add('dark-mode');
-      themeToggle.innerHTML = '<i class="fas fa-sun"></i>';
-    }
-
-    // === INITIALIZE DASHBOARD ===
+    // Initialize dashboard
     document.addEventListener('DOMContentLoaded', () => {
+      // Check for existing geolocation preference
+      if (localStorage.getItem('geolocationEnabled') === 'true') {
+        document.getElementById('enableGeoBtn').innerHTML = 
+          '<i class="fas fa-check-circle"></i> Geolocation Enabled';
+      }
+
+      // Check for dark mode preference
+      if (localStorage.getItem('darkMode') === 'true') {
+        document.body.classList.add('dark-mode');
+        document.getElementById('themeToggle').innerHTML = '<i class="fas fa-sun"></i>';
+      }
+
       updateStats();
       renderTable();
       setupEventListeners();
     });
 
-    // === STATISTICS FUNCTIONS ===
+    // Update statistics
     function updateStats() {
-      const links = JSON.parse(localStorage.getItem('trackingLinks') || '[]');
       const logs = JSON.parse(localStorage.getItem('trackingLogs') || '[]');
-      
-      // Filter logs based on view mode
       const filteredLogs = viewMode === 'my' ? logs.filter(log => log.deviceId === deviceId) : logs;
       
-      // Calculate unique IPs
       const uniqueIPs = new Set(filteredLogs.map(log => log.ip)).size;
-      
-      // Calculate unique countries
       const uniqueCountries = new Set(filteredLogs.map(log => log.country).filter(Boolean)).size;
+      const withGeo = filteredLogs.filter(log => log.latitude && log.longitude).length;
       
-      // Update DOM
-      document.getElementById('totalLinks').textContent = links.length;
-      document.getElementById('totalVisits').textContent = filteredLogs.length;
+      document.getElementById('totalLogs').textContent = filteredLogs.length;
       document.getElementById('uniqueIPs').textContent = uniqueIPs;
       document.getElementById('uniqueCountries').textContent = uniqueCountries;
+      document.getElementById('withGeo').textContent = withGeo;
     }
 
-    // === TABLE RENDERING ===
+    // Render table with pagination
     function renderTable(page = 1) {
       const tbody = document.getElementById('trackingTableBody');
       const pagination = document.getElementById('pagination');
@@ -608,7 +495,7 @@
       pagination.innerHTML = '';
       
       if (logs.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="7" class="no-data">No tracking data available</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 2rem; color: var(--gray-color); font-style: italic;">No tracking data available</td></tr>';
         return;
       }
       
@@ -623,11 +510,14 @@
       paginatedLogs.forEach(log => {
         const link = links.find(l => l.id === log.id);
         const row = document.createElement('tr');
-        row.className = 'fade-in';
         
         const locationText = log.city && log.country ? 
           `${log.city}, ${log.country}` : 
           (log.country || log.ip || 'Unknown');
+        
+        const coordsText = log.latitude && log.longitude ? 
+          `${log.latitude.toFixed(4)}, ${log.longitude.toFixed(4)}` : 
+          'N/A';
         
         const timeOptions = { 
           year: 'numeric', 
@@ -643,11 +533,14 @@
           <td>${link ? link.name : 'Unknown'}</td>
           <td>${log.ip || 'N/A'}</td>
           <td>${locationText}</td>
-          <td class="tooltip">${log.referrer.substring(0, 20)}${log.referrer.length > 20 ? '...' : ''}
-            <span class="tooltiptext">${log.referrer}</span>
-          </td>
+          <td>${coordsText}</td>
           <td>${formattedTime}</td>
+          <td>${log.referrer.substring(0, 20)}${log.referrer.length > 20 ? '...' : ''}</td>
           <td>
+            ${log.latitude && log.longitude ? 
+              `<button class="action-btn btn-view" data-lat="${log.latitude}" data-lng="${log.longitude}" data-location="${locationText}">
+                <i class="fas fa-map-marked-alt"></i> View Map
+              </button>` : ''}
             <button class="action-btn btn-delete" data-id="${log.id}">
               <i class="fas fa-trash-alt"></i> Delete
             </button>
@@ -682,16 +575,25 @@
         pagination.appendChild(nextBtn);
       }
       
-      // Add event listeners to delete buttons
+      // Add event listeners to action buttons
       document.querySelectorAll('.btn-delete').forEach(btn => {
         btn.addEventListener('click', function() {
           const logId = this.getAttribute('data-id');
           deleteLogEntry(logId);
         });
       });
+      
+      document.querySelectorAll('.btn-view').forEach(btn => {
+        btn.addEventListener('click', function() {
+          const lat = parseFloat(this.getAttribute('data-lat'));
+          const lng = parseFloat(this.getAttribute('data-lng'));
+          const location = this.getAttribute('data-location');
+          showMapModal(lat, lng, location);
+        });
+      });
     }
 
-    // === DELETE LOG ENTRY ===
+    // Delete log entry
     function deleteLogEntry(logId) {
       if (!confirm('Are you sure you want to delete this log entry?')) return;
       
@@ -699,12 +601,75 @@
       const updatedLogs = logs.filter(log => log.id !== logId);
       localStorage.setItem('trackingLogs', JSON.stringify(updatedLogs));
       
-      // Refresh the view
       updateStats();
       renderTable(currentPage);
     }
 
-    // === EVENT LISTENERS ===
+    // Show map modal
+    function showMapModal(lat, lng, location) {
+      const modal = document.getElementById('mapModal');
+      const modalTitle = document.getElementById('modalTitle');
+      const modalMap = document.getElementById('modalMap');
+      const modalDetails = document.getElementById('modalDetails');
+      
+      modalTitle.textContent = `Location: ${location}`;
+      modalDetails.innerHTML = `
+        <p><strong>Coordinates:</strong> ${lat.toFixed(6)}, ${lng.toFixed(6)}</p>
+      `;
+      
+      // Initialize or update map
+      if (map) {
+        map.setView([lat, lng], 13);
+        L.marker([lat, lng]).addTo(map);
+      } else {
+        modalMap.innerHTML = ''; // Clear previous map
+        map = L.map('modalMap').setView([lat, lng], 13);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(map);
+        L.marker([lat, lng]).addTo(map);
+      }
+      
+      // Show modal
+      modal.style.display = 'flex';
+      
+      // Close modal when clicking X
+      document.querySelector('.close-modal').onclick = () => {
+        modal.style.display = 'none';
+      };
+      
+      // Close modal when clicking outside
+      modal.onclick = (e) => {
+        if (e.target === modal) {
+          modal.style.display = 'none';
+        }
+      };
+    }
+
+    // Enable geolocation
+    function enableGeolocation() {
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            localStorage.setItem('geolocationEnabled', 'true');
+            localStorage.setItem('defaultLatitude', position.coords.latitude);
+            localStorage.setItem('defaultLongitude', position.coords.longitude);
+            
+            document.getElementById('enableGeoBtn').innerHTML = 
+              '<i class="fas fa-check-circle"></i> Geolocation Enabled';
+            
+            alert('Geolocation enabled! Future tracking logs will include your precise location.');
+          },
+          (error) => {
+            alert('Error getting geolocation: ' + error.message);
+          }
+        );
+      } else {
+        alert('Geolocation is not supported by your browser.');
+      }
+    }
+
+    // Setup event listeners
     function setupEventListeners() {
       // View mode toggle
       document.getElementById('viewMyDevice').addEventListener('click', function() {
@@ -732,63 +697,23 @@
           this.innerHTML = '<i class="fas fa-sync-alt"></i> Refresh Data';
         }, 500);
       });
-    }
-
-    // === DEMO DATA GENERATOR (for testing) ===
-    function generateDemoData() {
-      if (localStorage.getItem('demoDataGenerated')) return;
       
-      const demoLinks = [
-        { id: 'id-12345678', name: 'Product Page', url: 'http://example.com/redirect?id=12345678', createdAt: new Date().toISOString() },
-        { id: 'id-87654321', name: 'Checkout', url: 'http://example.com/redirect?id=87654321', createdAt: new Date().toISOString() },
-        { id: 'id-11223344', name: 'Promo Offer', url: 'http://example.com/redirect?id=11223344', createdAt: new Date().toISOString() }
-      ];
+      // Enable geolocation button
+      document.getElementById('enableGeoBtn').addEventListener('click', enableGeolocation);
       
-      const demoLogs = [];
-      const countries = ['United States', 'Canada', 'United Kingdom', 'Germany', 'France', 'Japan', 'Australia', 'Brazil', 'India', 'China'];
-      const cities = ['New York', 'Los Angeles', 'London', 'Berlin', 'Paris', 'Tokyo', 'Sydney', 'São Paulo', 'Mumbai', 'Shanghai'];
-      const referrers = [
-        'https://google.com', 
-        'https://facebook.com', 
-        'https://twitter.com', 
-        'https://linkedin.com', 
-        'https://reddit.com', 
-        'Direct'
-      ];
-      
-      // Generate logs for each link
-      demoLinks.forEach(link => {
-        for (let i = 0; i < 15; i++) {
-          const randomCountry = countries[Math.floor(Math.random() * countries.length)];
-          const randomCity = cities[Math.floor(Math.random() * cities.length)];
-          const randomReferrer = referrers[Math.floor(Math.random() * referrers.length)];
-          const randomIP = `${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 255)}`;
-          
-          // Alternate between current device and other devices
-          const logDeviceId = i % 3 === 0 ? deviceId : `device-${Math.floor(Math.random() * 1000)}`;
-          
-          demoLogs.push({
-            id: link.id,
-            target: link.name,
-            timestamp: new Date(Date.now() - Math.floor(Math.random() * 7 * 24 * 60 * 60 * 1000)).toISOString(),
-            referrer: randomReferrer,
-            ip: randomIP,
-            country: randomCountry,
-            city: randomCity,
-            deviceId: logDeviceId,
-            userAgent: navigator.userAgent,
-            platform: navigator.platform
-          });
+      // Theme toggle
+      document.getElementById('themeToggle').addEventListener('click', () => {
+        document.body.classList.toggle('dark-mode');
+        const isDarkMode = document.body.classList.contains('dark-mode');
+        localStorage.setItem('darkMode', isDarkMode);
+        
+        if (isDarkMode) {
+          document.getElementById('themeToggle').innerHTML = '<i class="fas fa-sun"></i>';
+        } else {
+          document.getElementById('themeToggle').innerHTML = '<i class="fas fa-moon"></i>';
         }
       });
-      
-      localStorage.setItem('trackingLinks', JSON.stringify(demoLinks));
-      localStorage.setItem('trackingLogs', JSON.stringify(demoLogs));
-      localStorage.setItem('demoDataGenerated', 'true');
     }
-
-    // Uncomment to generate demo data (for testing)
-    // generateDemoData();
   </script>
 </body>
 </html>
