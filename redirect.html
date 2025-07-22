@@ -5,106 +5,165 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Redirecting...</title>
     <style>
+        /* Minimal styling for the redirect page */
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: #f8f9fa;
+            color: #212529;
             display: flex;
             justify-content: center;
             align-items: center;
             height: 100vh;
             margin: 0;
-            background-color: #f5f5f5;
             text-align: center;
+            line-height: 1.5;
         }
+        
         .container {
-            background-color: white;
-            padding: 30px;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
             max-width: 500px;
+            padding: 2rem;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
         }
+        
         h1 {
-            color: #2c3e50;
-            margin-bottom: 20px;
+            color: #2b6cb0;
+            margin-bottom: 1rem;
+            font-size: 1.5rem;
         }
-        p {
-            color: #7f8c8d;
-            margin-bottom: 30px;
-        }
+        
         .spinner {
-            border: 4px solid rgba(0, 0, 0, 0.1);
+            width: 40px;
+            height: 40px;
+            border: 4px solid rgba(66, 153, 225, 0.2);
+            border-top-color: #4299e1;
             border-radius: 50%;
-            border-top: 4px solid #3498db;
-            width: 30px;
-            height: 30px;
+            margin: 0 auto 1.5rem;
             animation: spin 1s linear infinite;
-            margin: 0 auto 20px;
         }
+        
         @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+            to { transform: rotate(360deg); }
+        }
+        
+        .status {
+            color: #4a5568;
+            margin-bottom: 1rem;
+        }
+        
+        .details {
+            font-size: 0.875rem;
+            color: #718096;
+            margin-top: 1.5rem;
         }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="spinner"></div>
-        <h1>Redirecting...</h1>
-        <p>Please wait while we track your visit and redirect you.</p>
+        <h1>Tracking and redirecting to your destination...</h1>
+        <p class="status" id="status">Collecting tracking data</p>
+        <p class="details">This page will automatically redirect in a few seconds</p>
     </div>
 
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const urlParams = new URLSearchParams(window.location.search);
-            const targetName = urlParams.get('target');
-            const trackingId = urlParams.get('id');
-            
-            if (!targetName || !trackingId) {
-                window.location.href = 'lacak.html';
-                return;
+        // Immediately check for required query parameters
+        const urlParams = new URLSearchParams(window.location.search);
+        const target = urlParams.get('target');
+        const trackingId = urlParams.get('id');
+        
+        if (!target || !trackingId) {
+            window.location.href = 'lacak.html';
+        }
+        
+        // Update status message
+        function updateStatus(message) {
+            document.getElementById('status').textContent = message;
+        }
+        
+        // Generate a consistent device ID hash
+        function getDeviceId() {
+            const info = navigator.userAgent + navigator.platform + navigator.language;
+            let hash = 0;
+            for (let i = 0; i < info.length; i++) {
+                hash = (hash << 5) - hash + info.charCodeAt(i);
+                hash |= 0;
             }
-            
-            // Data dasar yang bisa diambil tanpa API
+            return hash.toString();
+        }
+        
+        // Main tracking function
+        async function trackAndRedirect() {
+            // Create base tracking data object
             const trackingData = {
                 id: trackingId,
-                target: targetName,
+                target: target,
                 timestamp: new Date().toISOString(),
                 referrer: document.referrer || 'Direct',
                 userAgent: navigator.userAgent,
                 platform: navigator.platform,
+                language: navigator.language,
                 screenWidth: window.screen.width,
                 screenHeight: window.screen.height,
-                language: navigator.language,
-                urlParams: window.location.search
+                deviceId: getDeviceId()
             };
             
-            // Coba dapatkan data IP
-            fetch('https://ipapi.co/json/')
-                .then(response => response.json())
-                .then(ipData => {
-                    trackingData.ip = ipData.ip;
-                    trackingData.country = ipData.country_name;
-                    trackingData.region = ipData.region;
-                    trackingData.city = ipData.city;
-                    
-                    // Simpan data lengkap
-                    saveTrackingData(trackingData);
-                })
-                .catch(error => {
-                    console.log('Gagal mendapatkan data IP, menyimpan data dasar saja');
-                    trackingData.ip = 'Unknown';
-                    saveTrackingData(trackingData);
-                });
+            updateStatus('Getting location data...');
             
-            function saveTrackingData(data) {
-                const trackingLogs = JSON.parse(localStorage.getItem('trackingLogs') || '[]');
-                trackingLogs.unshift(data); // Tambahkan di awal array
-                localStorage.setItem('trackingLogs', JSON.stringify(trackingLogs));
-                
-                // Redirect setelah 2 detiks
-                setTimeout(() => {
-                    window.location.href = `https://google.com/search?q=${encodeURIComponent(targetName)}`;
-                }, 2000);
+            try {
+                // Get IP-based location data
+                const ipResponse = await fetch('https://ipapi.co/json/');
+                if (ipResponse.ok) {
+                    const ipData = await ipResponse.json();
+                    trackingData.ip = ipData.ip;
+                    trackingData.city = ipData.city;
+                    trackingData.region = ipData.region;
+                    trackingData.country = ipData.country_name;
+                }
+            } catch (error) {
+                console.log('IP location lookup failed, using basic data');
             }
+            
+            // Try to get precise geolocation (if user grants permission)
+            if (navigator.geolocation) {
+                try {
+                    const position = await new Promise((resolve, reject) => {
+                        navigator.geolocation.getCurrentPosition(resolve, reject, {
+                            timeout: 2000 // Don't wait too long
+                        });
+                    });
+                    
+                    trackingData.latitude = position.coords.latitude;
+                    trackingData.longitude = position.coords.longitude;
+                    trackingData.accuracy = position.coords.accuracy;
+                } catch (geoError) {
+                    console.log('Geolocation not available or denied');
+                }
+            }
+            
+            updateStatus('Saving tracking data...');
+            
+            // Save to localStorage
+            const existingLogs = JSON.parse(localStorage.getItem('trackingLogs') || [];
+            existingLogs.unshift(trackingData); // Add new entry at beginning
+            localStorage.setItem('trackingLogs', JSON.stringify(existingLogs));
+            
+            updateStatus('Redirecting...');
+            
+            // Redirect after a brief delay (even if some data collection failed)
+            setTimeout(() => {
+                window.location.href = `https://www.google.com/search?q=${encodeURIComponent(target)}`;
+            }, 1500);
+        }
+        
+        // Start the tracking process
+        trackAndRedirect().catch(error => {
+            console.error('Tracking error:', error);
+            updateStatus('Error occurred - redirecting...');
+            setTimeout(() => {
+                window.location.href = `https://www.google.com/search?q=${encodeURIComponent(target)}`;
+            }, 1500);
         });
     </script>
 </body>
